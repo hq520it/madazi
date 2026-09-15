@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-server
+  namespace: madazi
+spec:
+  # ★ P3（2026-08-24）：入口收敛到 Traefik（30456）——server 退回 ClusterIP，
+  #   公网链路变为 frp 7456 → traefik:30456 → 按 IngressRoute 分流 server/dsh-web。
+  #   server 不再直接暴露 NodePort（dsh 反代职责移交 Traefik）。
+  type: ClusterIP
+  ports:
+  - port: 3456
+    targetPort: 3456
+  selector:
+    app: madazi-server

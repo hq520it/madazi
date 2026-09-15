@@ -1,0 +1,134 @@
+# Traefik 路由表（P3 2026-08-24）——逐条复刻 server dsh-web-proxy.js 的分流语义
+# ★ 三表镜像同步义务（改一处必改另两处）：
+#   1) 本文件 PLATFORM_API 正则（route#1）
+#   2) server src/services/dsh-web-proxy.js 的 PLATFORM_API
+#   3) dsh-web pod 侧 web-proxy nginx 白名单（k8s/dsh-web-deployment.yaml）
+# ★ 公网路径形态参考（quda nginx 实测，改 quda 时须重新核对）：
+#   madazi 域：/api/*、/dsh-web/*（直连+apex 重写）、/plugins|/git|/workbench-sounds|/ultra-slash
+#   预览域：pv-<id>.<YOUR-DOMAIN>.com 任意路径（子域名即鉴权，server 侧动态 podIP 代理）
+#   注：裸 /ws（dsh 官方无鉴权本地工具 WS）有意不设路由——quda 公网本不转发该前缀，
+#   且不应将无鉴权 WS 经入口暴露（server 进程内反代的 /ws 直连语义保留，不经 traefik）。
+---
+# ── Middleware ───────────────────────────────────────────────
+# 登录门：forwardAuth 调 server 探针（Bearer/query 经 X-Forwarded-Uri/cookie 三通道判定）
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dsh-auth
+  namespace: madazi
+spec:
+  forwardAuth:
+    address: http://madazi-server:3456/api/auth/check
+---
+# /dsh-web/* → /*（官方 UI 根路径，与 server proxyReq 路径重写同语义）
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-dsh-web
+  namespace: madazi
+spec:
+  stripPrefix:
+    prefixes: ["/dsh-web"]
+---
+# 特权 RPC 伪装 loopback（Host→127.0.0.1 + 删 Origin），语义 = server PRIVILEGED_RPC 反代改写
+# （官方 isTrustedApiRequest 围栏：settings./credentials./agentPreset./host.pickDirectory/openPath/llm./pluginInventory）
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dsh-privileged
+  namespace: madazi
+spec:
+  headers:
+    customRequestHeaders:
+      Host: "127.0.0.1"
+      Origin: ""
+---
+# ── IngressRoute ─────────────────────────────────────────────
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: madazi-entry
+  namespace: madazi
+spec:
+  entryPoints: [web]
+  routes:
+    # 1) 预览子域（最高优先级：Host 匹配，任意路径 → server 动态 podIP 代理；子域名即鉴权）
+    - match: HostRegexp(`^pv-[a-z0-9]{8}\.<YOUR-DOMAIN>\.com$`)
+      kind: Rule
+      priority: 10000
+      services:
+        - { name: madazi-server, port: 3456 }
+    # 2) 平台 API 家族（正则与 server PLATFORM_API / pod nginx 白名单镜像）
+    #    ★ session/ 会话数据层（2026-09-04 加：0.1.2 起 RPC 斜杠 /api/session/*，须经 server 做
+    #      权限拦截 + 发送人记录；漏配 = 非成员可直连 dsh 读会话，安全漏洞）
+    - match: PathRegexp(`^/api/(health$|auth(?:/|$)|keys(?:/|$)|admin(?:/|$)|market(?:/|$)|projects(?:/|$)|dsh(?:/|$)|session(?:/|$)|llm(?:/|$)|templates(?:/|$)|skills(?:/|$)|license(?:/|$)|ws(?:/|$))`)
+      kind: Rule
+      priority: 1000
+      services:
+        - { name: madazi-server, port: 3456 }
+    # 2.5) dsh skills.list Remote RPC（skills namespace 唯一方法），非平台家族——
+    #      Platform 无 /api/skills/list 端点；RE2 不支持负向前瞻，故用精确路由表达「skills/list 非平台」。
+    - match: PathRegexp(`^/api/skills/list$`)
+      kind: Rule
+      priority: 1100
+      middlewares:
+        - { name: dsh-auth }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 2.6) dsh llm.* Remote RPC（模型设置 tab 消费：listProviders/discoverModels/
+    #      listConfigurableProviders/adapters），非平台家族——Platform 只有 /api/llm/{configs,presets}。
+    #      RE2 无负向前瞻 → 精确路由表达「llm RPC 非平台」；需 loopback 伪装（官方 llm. 属特权 RPC）。
+    - match: PathRegexp(`^/api/llm/(listProviders|discoverModels|listConfigurableProviders|adapters)$`)
+      kind: Rule
+      priority: 1100
+      middlewares:
+        - { name: dsh-auth }
+        - { name: dsh-privileged }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 3) 特权 dsh RPC（登录门 + loopback 伪装；优先级须高于 /api 兜底）
+    - match: PathRegexp(`^/api/(settings\.|credentials\.|agentPreset\.|host\.pickDirectory|host\.openPath|llm\.|pluginInventory)`)
+      kind: Rule
+      priority: 200
+      middlewares:
+        - { name: dsh-auth }
+        - { name: dsh-privileged }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 3.5) dsh 事件流 WS 豁免：继续直达 pod（红线：server 滚动发版不断 dsh 事件流；
+    #      RPC HTTP 面 2026-08-27 起改经 server 做会话数据层权限拦截，WS 不切）
+    - match: PathRegexp(`^/api/events\.(mux|host)`)
+      kind: Rule
+      priority: 150
+      middlewares:
+        - { name: dsh-auth }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 4) 其余 /api/*（dsh RPC HTTP 面）→ 登录门 → madazi-server（鉴权 + 会话数据层权限
+    #    SESSION_RPC 拦截 + PLATFORM_API fall-through 反代 pod；新增 dsh RPC 仍零配置自动通）
+    - match: PathPrefix(`/api`)
+      kind: Rule
+      priority: 100
+      middlewares:
+        - { name: dsh-auth }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 5) /dsh-web 静态（公开：登录页/工作台壳必须可加载）→ 剥前缀 → dsh-web
+    - match: PathPrefix(`/dsh-web`)
+      kind: Rule
+      middlewares:
+        - { name: strip-dsh-web }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 6) 官方静态绝对路径（公开）
+    - match: PathPrefix(`/plugins`) || PathPrefix(`/assets`) || PathPrefix(`/favicon`)
+      kind: Rule
+      services:
+        - { name: madazi-dsh-web, port: 3080 }
+    # 7) dsh 数据面顶层挂载（登录门；公网经 quda 直转这四个前缀）
+    - match: PathPrefix(`/socket.io`) || PathPrefix(`/git`) || PathPrefix(`/workbench-sounds`) || PathPrefix(`/ultra-slash`)
+      kind: Rule
+      middlewares:
+        - { name: dsh-auth }
+      services:
+        - { name: madazi-dsh-web, port: 3080 }

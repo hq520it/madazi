@@ -1,0 +1,57 @@
+---
+# S2-2: madazi-llm-gateway 独立 deployment
+# 只读 api_keys/model_costs/settings，只写 usage_logs（共用 Postgres）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-llm-gateway
+  namespace: madazi
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: madazi-llm-gateway }
+  template:
+    metadata:
+      labels: { app: madazi-llm-gateway }
+    spec:
+      containers:
+        - name: gateway
+          image: madazi-llm-gateway:g01
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 3459 }]
+          env:
+            # 注意顺序：POSTGRES_PASSWORD 必须在 DATABASE_URL 之前定义，
+            # k8s 才能在 value 里展开 $(POSTGRES_PASSWORD)
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: madazi-secret, key: POSTGRES_PASSWORD }
+            - name: DATABASE_URL
+              value: "postgresql://postgres:$(POSTGRES_PASSWORD)@madazi-postgres:5432/madazi"
+            - name: KEY_MASTER_SECRET
+              valueFrom:
+                secretKeyRef: { name: madazi-secret, key: KEY_MASTER_SECRET }
+            - name: GATEWAY_UPSTREAM_BASE_URL
+              value: "https://api.deepseek.com/v1"
+            - name: GATEWAY_GRANT_USD
+              value: "100"
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: "1", memory: 512Mi }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 3459 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3459 }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-llm-gateway
+  namespace: madazi
+spec:
+  selector: { app: madazi-llm-gateway }
+  type: NodePort
+  ports: [{ port: 3459, targetPort: 3459, nodePort: 30459 }]

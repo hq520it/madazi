@@ -1,0 +1,41 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+uploads/
+generated/
+scripts/keys/license-private.pem
+
+# License 厂商私钥（勿提交）
+madazi-server/scripts/keys/license-private.pem
+
+# dsh arm64 二进制（193M，构建产物不入库，构建时从 deepseek-harness 拷贝）
+madazi-server/docker/acp/dsh-agent
+# 临时备份
+*.bak-p1
+*.bak-p1b
+
+# 敏感凭证，禁止入库
+k8s-dashboard-token.txt
+*_token.txt
+madazi-k8s-token.txt
+
+# workbench 插件源码：独立 git 仓库（gitee 远端），嵌套仓库不入 madazi 库
+
+# dsh 内核源码 fork：独立 git 仓库（github: hq520it/dsh-fork），嵌套仓库不入 madazi 库
+
+# dsh-src 构建产物同步目录（build-dsh-web.sh 3d 步骤产物，构建时从 dsh-src 同步）
+madazi-server/docker/acp/dsh-src-dist/
+
+# 专利申请文件（未公开前禁止入库/开源）
+docs/patent/
+
+# 开源投放产物目录（scripts/publish-opensource.sh 输出）
+opensource-dist/
+
+# IDE/本地工具与临时素材（不入库）
+.trae/
+.video_assets/
+.hermes/

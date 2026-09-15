@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: madazi-preview
+  namespace: madazi
+spec:
+  serviceName: madazi-preview
+  replicas: 2
+  selector:
+    matchLabels:
+      app: madazi-preview
+  template:
+    metadata:
+      labels:
+        app: madazi-preview
+    spec:
+      containers:
+      - name: preview
+        image: madazi-preview-runtime:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PREVIEW_MODE
+          value: "pool"
+        volumeMounts:
+        - name: projects-data
+          mountPath: /data
+        resources:
+          limits:
+            memory: "192Mi"
+            cpu: "150m"
+      volumes:
+      - name: projects-data
+        persistentVolumeClaim:
+          claimName: madazi-projects-pvc

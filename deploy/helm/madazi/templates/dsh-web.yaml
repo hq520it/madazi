@@ -1,0 +1,236 @@
+# madazi-dsh-web — 官方 DSH Web UI（工作区 iframe 内嵌，server /dsh-web 反代）
+# 官方安全设计：dsh web 只允许绑 127.0.0.1 → sidecar nginx 反代暴露 0.0.0.0:3080
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dsh-web-nginx
+  namespace: {{ include "madazi.ns" . }}
+data:
+  default.conf: |
+    server {
+        listen 3080;
+        # ★ MADAZI 冷启动优化（2026-08-27）：首屏十几个插件 bundle 裸传几 MB，
+        # 首波请求 5s+，触发 dsh 客户端 3s 连接超时（症状：sidebar 有项目无会话）。
+        #   1) gzip：必须 gzip_proxied any——本机全部响应经 proxy，缺它 gzip 不生效；
+        #      text/event-stream 不在 gzip_types，events SSE 通道不受影响
+        #   2) /plugins/*.js 带 rev（内容指纹）→ 隐藏上游 no-cache，改 immutable 永久缓存；
+        #      升级 dsh 版本 rev 必变，URL 变即自然失效，无陈旧代码风险
+        gzip on;
+        gzip_comp_level 5;
+        gzip_min_length 1024;
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_types text/javascript application/javascript application/json text/css image/svg+xml;
+        # rev 化核心静态资源（/assets/ 核心 bundle + 字体等）：内容寻址 → immutable 长缓存
+        # （修复刷新每次重下 ~1.2MB 核心 bundle；与 /plugins/ 缓存策略一致）
+        location ~ ^/assets/.+\.(js|css|svg|woff2?|png|jpe?g|ico)$ {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_read_timeout 3600s;
+            proxy_hide_header Cache-Control;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+        }
+        # rev 化插件 bundle：长缓存（正则 location 优先于下面的前缀 location）
+        location ~ ^/plugins/.+\.js$ {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_read_timeout 3600s;
+            proxy_hide_header Cache-Control;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+        }
+        # ★ MADAZI SSE 直通（2026-08-28）：events 流是 dsh 客户端全部 baseline 的
+        #   就绪握手依赖（onConnected 等首帧），代理缓冲会让握手帧滞留、页面卡在
+        #   「有项目无会话」。SSE 路径显式关缓冲。
+        location /plugins/events {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 3600s;
+        }
+        # ★ MADAZI 工作台 SSE/低延迟 API 直通（2026-09-08）：/git/term/stream 是终端
+        #   SSE 长连接，root location 缺 proxy_buffering off → nginx 缓冲 ping 帧，
+        #   浏览器收不到心跳 → EventSource 误判死链 → 「工作区命令行没有启动成功」。
+        #   /git/* 全是工作台低延迟 API，统一关缓冲。
+        location /git/ {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 3600s;
+        }
+        # dsh skills.list RPC（非平台家族）：location = 精确匹配优先于平台白名单正则，
+        # 转发 dsh-web 本体；其余 skills/* 仍由平台白名单转 madazi-server。
+        location = /api/skills/list {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_read_timeout 3600s;
+        }
+        # dsh llm.* RPC（非平台家族，模型设置 tab 消费）：location 精确匹配优先于平台白名单
+        # 正则，转发 dsh-web 本体；其余 llm/*（configs/presets 平台 API）仍转 madazi-server。
+        location ~ ^/api/llm/(listProviders|discoverModels|listConfigurableProviders|adapters)$ {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_read_timeout 3600s;
+        }
+        # server 平台 API 白名单 → madazi-server（★ 与 server 侧 PLATFORM_API 正则镜像同步，改一处必改另一处）
+        # ★ session/ 不在 nginx 白名单（2026-09-04）：外部经 traefik 已先到 server，反代回本 nginx 再命中会循环 400
+        location ~ ^/api/(auth/|keys/|admin/|market/|projects/|dsh/|llm/|templates/|skills/|license/|ws/) {
+            proxy_pass http://madazi-server:3456;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_read_timeout 3600s;
+        }
+        # 其余 /api/（dsh 插件 RPC + events.mux WS）→ dsh-web 3081
+        location /api/ {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_read_timeout 3600s;
+        }
+        # 前端静态 + 其余 → dsh-web 自身 3081
+        location / {
+            proxy_pass http://127.0.0.1:3081;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 3600s;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-dsh-web
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  # ★ 铁律 replicas:1（单进程会话所有权——多副本见 ARCHITECTURE.md §2.5 证伪记录）
+  replicas: {{ .Values.dshWeb.replicas }}
+  selector:
+    matchLabels: { app: madazi-dsh-web }
+  template:
+    metadata:
+      labels: { app: madazi-dsh-web }
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      initContainers:
+        - name: profile-init
+          image: {{ include "madazi.dshWebImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ['/bin/sh', '-c']
+          # 幂等升级：对比 PVC 上 .madazi-template-version 与镜像内 .installed-version，
+          # 不一致时把 workbench 模板合并进 PVC profiles/web（保留用户数据）
+          args:
+            - |
+              set -e
+              DST=/app/generated/.dsh/profiles/web
+              SRC=/opt/dsh-profiles-web
+              # 平台插件 symlink（幂等，每次启动确保）
+              mkdir -p $DST/node_modules/@madazi
+              ln -sfn /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@madazi/dsh-plugin-madazi $DST/node_modules/@madazi/dsh-plugin-madazi
+              ln -sfn /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@madazi/dsh-plugin-login $DST/node_modules/@madazi/dsh-plugin-login
+              VER=$(cat /app/generated/.dsh/.madazi-template-version 2>/dev/null || echo none)
+              WANT=$(cat $SRC/.installed-version)
+              if [ "$VER" = "$WANT" ]; then
+                echo "profile template up-to-date: $VER, skip"
+                exit 0
+              fi
+              echo "upgrading profile template: $VER -> $WANT"
+              mkdir -p $DST
+              cp -R $SRC/. $DST/
+              mkdir -p /app/generated/.dsh
+              echo "$WANT" > /app/generated/.dsh/.madazi-template-version
+              ls $DST/node_modules/dsh-workbench-plugin/lib/ | head -3
+              echo "profile template upgraded to $WANT"
+              mkdir -p /app/generated/.dsh/profile && [ -f /app/generated/.dsh/profile/cordis.yml ] || cp -r /opt/dsh-profile/. /app/generated/.dsh/profile/
+          volumeMounts:
+            - { name: projects, mountPath: /app/generated }
+      containers:
+        - name: dsh-web
+          image: {{ include "madazi.dshWebImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ['--port', '3081', '--trusted-host', {{ .Values.domain | quote }}]
+          envFrom:
+            - { configMapRef: { name: madazi-config } }
+            - { secretRef: { name: {{ include "madazi.secretName" . }} } }
+          env:
+            - { name: HOME, value: /tmp }
+            - { name: DSH_HOME, value: /app/generated/.dsh }
+            - { name: DSH_SNAPSHOT_SESSIONS_ROOT, value: /app/generated/.dsh-sessions }
+            # browse 模式必需（官方 host 安全检查：无 SSH_CONNECTION 禁用目录浏览）
+            - { name: SSH_CONNECTION, value: 'local 12345 127.0.0.1 22' }
+            # ★ 沙箱 clamp（2026-09-05）：host 插件 sandbox-clamp 从平台拉会话→有权限项目根，
+            # 把 danger-full-access 重定义为「可写创建人有权限的所有项目」+ 读收紧到有权限集合
+            - { name: MADAZI_SERVER_URL, value: 'http://madazi-server:3456' }
+            - name: MADAZI_INTERNAL_TOKEN
+              valueFrom: { secretKeyRef: { name: {{ include "madazi.secretName" . }}, key: JWT_SECRET } }
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            # DAC_READ_SEARCH：绕过文件「读」权限检查（跨项目只读 @ 引用），
+            # 不含 DAC_OVERRIDE → 写权限检查仍生效；写边界另由 dsh 沙箱
+            # （workspace-write 限制在 session cwd）双保险
+            capabilities: { drop: [ALL], add: [DAC_READ_SEARCH] }
+          resources: {{- toYaml .Values.dshWeb.resources.main | nindent 12 }}
+          volumeMounts:
+            - { name: projects, mountPath: /app/generated }
+            - { name: tmp, mountPath: /tmp }
+            - { name: run, mountPath: /run }
+        - name: web-proxy
+          image: nginx:alpine
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - { containerPort: 3080, name: http }
+          readinessProbe:
+            httpGet: { path: /, port: 3080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources: {{- toYaml .Values.dshWeb.resources.proxy | nindent 12 }}
+          volumeMounts:
+            - { name: nginx-conf, mountPath: /etc/nginx/conf.d/default.conf, subPath: default.conf }
+      volumes:
+        - { name: projects, persistentVolumeClaim: { claimName: madazi-projects-pvc } }
+        - { name: tmp, emptyDir: { medium: Memory, sizeLimit: 256Mi } }
+        - { name: run, emptyDir: { medium: Memory, sizeLimit: 256Mi } }
+        - { name: nginx-conf, configMap: { name: dsh-web-nginx } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-dsh-web
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  selector: { app: madazi-dsh-web }
+  ports:
+    - { port: 3080, targetPort: 3080 }

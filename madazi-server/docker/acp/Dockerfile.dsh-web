@@ -1,0 +1,87 @@
+# madazi-dsh-web - 官方 DSH Web UI（平台工作区 iframe 内嵌，同域反代）
+# 基于 madazi-dsh（node24 + dsh CLI + /opt/dsh-profile 模板固化），入口改为 dsh web
+# 锁 dsh CLI 版本（防 latest 漂移）：2026-09-01 升 0.1.2-alpha.5，2026-09-03 收敛 0.1.2-rc.1（产物字节级一致，覆盖层/补丁复用）
+# 2026-09-10 升 0.1.5-rc.1（latest 稳定线；适配 V4.1 Flash + 插件侧栏扩展入口）
+# 2026-09-12 fork：npm 包 = 承载体（仅 CLI 入口 + 依赖声明，子包全部由 npm 解析）；
+#   三处内核定制改走 dsh-src 本地构建产物整体覆盖（见下方 dsh-src-dist 段，运行期补丁已退役）
+FROM madazi-dsh:latest
+
+RUN npm i -g @deepseek-ai/dsh@0.1.5-rc.1 --registry=https://registry.npmmirror.com
+
+# ── workbench 三栏模板（fork 定制：gitee hq.com/dsh-workbeanch，dev@a9b3bec）──
+# 配方 = 本地实证（三栏渲染验证通过）：profile package.json deps+bundles +
+# pnpm-workspace.yaml（hoisted + allowBuilds node-pty）。
+# 构建期 pnpm install --frozen-lockfile 现编译 node-pty（镜像已带 python3/make/g++），
+# 运行时 readOnlyRootFilesystem 只读，插件树必须构建期固化。
+# initContainer 按 .madazi-template-version 对比 PVC 版本决定是否合并铺入（见
+# k8s/dsh-web-deployment.yaml）。
+# ★ 顺序：install 在 COPY plugins 之前 —— 插件改动不触发 pnpm install 重跑（缓存友好）
+# ★ fork 产物自带启动隐藏（src/client/workbench/splash.ts 源码级实现），无需构建期 patch
+COPY profiles-web/ /opt/dsh-profiles-web/
+RUN cd /opt/dsh-profiles-web \
+    && pnpm install --frozen-lockfile --config.confirmModulesPurge=false --config.minimumReleaseAge=0 --registry=https://repo.huaweicloud.com/repository/npm/ \
+    && cat .madazi-template-version > .installed-version \
+    && node -e "const m=require('./node_modules/dsh-workbench-plugin/package.json');console.log('workbench',m.version,'ok')" \
+    && node -e "const s=require('fs').readFileSync('./node_modules/dsh-workbench-plugin/lib/client.js','utf8');if(!s.includes('wb-splash-css')){console.error('SPLASH SOURCE VERIFY FAILED');process.exit(1)};console.log('splash-source-verified')" \
+    && du -sh /opt/dsh-profiles-web
+
+# madazi 平台插件（P1 dock 面板）：node 半 + client 半 + Typert manifest
+# 放 dsh 嵌套依赖树：import '@deepseek-ai/dsh-typert-protocol'/'@deepseek-ai/schemastery' 解析链全覆盖
+COPY plugins/dsh-plugin-madazi/ /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@madazi/dsh-plugin-madazi/
+# S2-1 登录门插件：client 半（遮罩登录/用户 chip/登出）+ node 半占位
+COPY plugins/dsh-plugin-login/ /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@madazi/dsh-plugin-login/
+
+# ── dsh 内核 fork 定制产物覆盖（dsh-src 本地构建，替代运行期补丁）──────────
+# 2026-09-12 fork：三处内核定制（loopback 围栏 / 技能目录刷新 / trusted-host 直通）
+# 在 dsh-src 源码直接修改并本地构建（commit a8b829d760），产物整体覆盖官方子包：
+#   dsh-client-connection → patches/01-loopback + 03-trusted-host
+#   dsh-client-ui-skill   → patches/02-skill-catalog-refresh
+# 覆盖路径 = npm 全局树内对应子包目录；web-frontend 的 __DSH_TRUSTED_LOOPBACK__
+# 注入已源码化于 dsh-src 的 frontend-static renderIndex，镜像无需再改 index.html。
+# 产物由 scripts/build-dsh-web.sh 3d 步骤从 dsh-src lib/ 同步到上下文 dsh-src-dist/。
+# 以下 grep = 运行期补丁的保险丝语义：幻灭即构建失败，提醒升级后重放 patch。
+COPY dsh-src-dist/dsh-client-connection/ /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-connection/
+COPY dsh-src-dist/dsh-client-ui-skill/ /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-skill/
+COPY dsh-src-dist/dsh-client-ui-workspace/ /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-workspace/
+RUN grep -q "__DSH_TRUSTED_LOOPBACK__" /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-connection/lib/client.js \
+    || { echo "DSH-SRC OVERRIDE FAILED: connection 产物缺 loopback 标记（dsh-src 产物未同步）"; exit 1; }
+# trusted-host 直通与 loopback 同在 dsh-client-connection 包：上一条代码标记
+# 已验证本包被 fork 产物覆盖（连坐）；升级时 rpc-host 若上游改动会以 git
+# merge 冲突暴露（fork 后保险丝语义，见 docs/dsh-fork.md §5），无需独立标记。
+RUN grep -q "invalidate(session.sessionId)" /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-skill/lib/client.js \
+    || { echo "DSH-SRC OVERRIDE FAILED: ui-skill 产物缺技能刷新标记（dsh-src 产物未同步）"; exit 1; }
+RUN grep -q "api/projects" /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-workspace/lib/client.js \
+    && grep -q "startMembershipWatch" /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-workspace/lib/client.js \
+    && grep -q "gatedWorkspaces" /usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-ui-workspace/lib/client.js \
+    || { echo "DSH-SRC OVERRIDE FAILED: ui-workspace 产物缺 membership gate（dsh-src 产物未同步）"; exit 1; }
+
+# ── 启动全屏遮罩（boot shield）──已移除──────────
+# 曾注入 index.html 内联遮罩（#madazi-boot-shield）由 login 插件接管移除；
+# 已按需求去掉 madazi loading 盖层，启动加载直接显示 DSH 官方 loading plugins，
+# 后续如需优化启动体验直接改 DSH 源码（wb-src）。
+
+# ── MADAZI membership gate（ui-workspace 渲染源头裁剪）──已在 fork 源码实现──
+# 2026-09-12 fork：membership gate 已源码化于 dsh-src
+# packages/client/ui-workspace（src/client/membership-gate.ts，随本包产物覆盖进入
+# 镜像）；旧产物级注入（scripts/build-override-membership.mjs + dsh-overrides/）
+# 退役删除。产物保险丝见上方 fork 覆盖段（api/projects + startMembershipWatch +
+# gatedWorkspaces）。
+
+# ── MADAZI trusted-host 直通（绕过 alpha.5 BrowserAuth）──已在 fork 源码实现──
+# 2026-09-12 fork：requestRejection(/api) 与 authorizeIndex(index) 直通已在
+# dsh-src packages/client/connection/src/rpc-host.ts 源码直接修改（commit
+# a8b829d760），随 dsh-src-dist 产物覆盖进入镜像；isTrustedApiRequest 前位
+# 守卫保留（不可信 host 仍 403）。产物验证见上方 fork 覆盖段（grep 2 处标记）。
+
+# ── MADAZI connection timeout ──已移除──────────
+# 0.1.2 曾用外科 sed 把冷启动 3s 流打开超时改为 12s（公网首波 5s+ 时防
+# 连接失败重试循环）。0.1.5 官方默认值已提升至 15e3（Schema 层），
+# 无需再补丁，本段随升级删除。
+
+# dsh web 官方入口（DSH_HOME / DSH_SNAPSHOT_SESSIONS_ROOT 由 deployment env 注入）
+# ★ madazi bridge 平台 API 地址：web pod 内 127.0.0.1 无服务，必须走 k8s Service DNS
+ENV DSH_WEB_PORT=3080
+ENV MADAZI_API_BASE=http://madazi-server:3456
+EXPOSE 3080
+WORKDIR /tmp
+ENTRYPOINT ["dsh", "web"]

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-postgres
+  namespace: madazi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: madazi-postgres
+  template:
+    metadata:
+      labels:
+        app: madazi-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "madazi"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: madazi-secret
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          limits:
+            memory: "192Mi"
+            cpu: "150m"
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: madazi-postgres-pvc

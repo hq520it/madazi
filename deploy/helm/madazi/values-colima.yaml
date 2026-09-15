@@ -1,0 +1,35 @@
+# 本机 colima/k3s 开发环境 overrides（复刻当前生产集群形态）
+# 用法：helm template madazi deploy/helm/madazi -f deploy/helm/madazi/values-colima.yaml
+#       helm install    madazi deploy/helm/madazi -f deploy/helm/madazi/values-colima.yaml
+domain: <YOUR-DOMAIN>
+previewDomain: <YOUR-DOMAIN>.com
+
+image:
+  # 本地构建导入（ctr import 铁律），非 registry 拉取
+  pullPolicy: Never
+
+tags:
+  server: newfix15      # 跟随当前部署版本
+
+storage:
+  className: local-path
+  projectsSize: 10Gi   # 复刻现网（local-path PVC 不可扩缩容，必须与现存一致）
+
+# ★ 复用现网 secret（真实凭证已在集群里；重建会破坏现网连接）
+secrets:
+  existingSecret: madazi-secret
+
+service:
+  type: NodePort
+  serverNodePort: 30456           # P3 后归 traefik（server 退 ClusterIP）
+  gatewayNodePort: 30459
+
+traefik:
+  enabled: true
+  image: traefik:v3.5             # 已 k3s ctr import（daocloud 源拉取）
+
+server:
+  resources: { requests: { cpu: 100m, memory: 128Mi }, limits: { cpu: 300m, memory: 384Mi } }
+
+previewPool:
+  replicas: 0            # 当前集群缩容待命

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: madazi-config
+  namespace: madazi
+data:
+  NODE_ENV: "production"
+  PORT: "3456"
+  PREVIEW_DOMAIN: "<YOUR-DOMAIN>"
+  DATABASE_URL: "postgresql://postgres:CHANGE-ME-POSTGRES-PASSWORD@madazi-postgres:5432/madazi"
+
+  USE_K8S: "1"
+  K8S_NAMESPACE: "madazi"
+
+  DSH_IMAGE: "madazi-dsh:latest"
+  # preview 镜像按后端技术栈选用专用镜像，runtime 仅作兜底（imagePullPolicy 全部 Never）
+  PREVIEW_IMAGE: "madazi-preview-runtime:latest"
+  PROJECTS_PVC: "madazi-projects-pvc"
+
+  PREVIEW_POOL_SIZE: "2"
+  LICENSE_PRIVATE_KEY_PATH: "/app/licenses/private.pem"
+  DSH_ENABLED: "true"
+  DSH_PORT: "3457"
+  DSH_USE_NIX: "true"
+  DSH_NIX_PORT: "3458"
+  # 官方 DSH Web UI 反代目标（server 同域 /dsh-web → web pod sidecar）
+  DSH_WEB_URL: "http://madazi-dsh-web:3080"
+  LOG_LEVEL: "info"
+  # Redis 事件流（SSE 续传游标）：短时数据（TTL 1h），PG 才是长期真相源——不可用时自动降级
+  REDIS_URL: "redis://madazi-redis:6379"

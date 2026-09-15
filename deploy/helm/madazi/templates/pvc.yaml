@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: madazi-projects-pvc
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.storage.projectsSize }}
+  {{- include "madazi.storageClass" . | nindent 2 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: madazi-postgres-pvc
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.storage.postgresSize }}
+  {{- include "madazi.storageClass" . | nindent 2 }}

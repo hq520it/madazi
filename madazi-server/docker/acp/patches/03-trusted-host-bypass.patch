@@ -1,0 +1,40 @@
+# Patch 03 — trusted-host 直通（绕过 BrowserAuth）
+#
+# 目标：dsh 起强制 BrowserAuth（/ 与 /api 需随机 token 换发签名 cookie），
+#       公网用户拿不到 token → 全站 401。平台鉴权边界在 traefik forwardAuth 登录门，
+#       dsh 内层 cookie 是冗余墙 → 直通。保留 isTrustedApiRequest 前位守卫
+#       （不可信 host 仍 403）。
+# 方式：移除两处 cookie 检查（API 鉴权与 index 鉴权）。
+#
+# 应用（fork 后，源码级）：dsh-src 仓内
+#   cd dsh-src && git apply --check patches/03-trusted-host-bypass.patch && git apply patches/03-trusted-host-bypass.patch
+#   已随 commit a8b829d760 「madazi: 内核三处定制」进入 fork 主仓，升级重放此 patch。
+# 重验（升级 runbook）：git apply --check 通过即命中；
+#       grep "madazi trusted-host bypass" packages/client/connection/src/rpc-host.ts（期望 2 处）
+
+diff --git a/packages/client/connection/src/rpc-host.ts b/packages/client/connection/src/rpc-host.ts
+index d74734e132..9645c8df1d 100644
+--- a/packages/client/connection/src/rpc-host.ts
++++ b/packages/client/connection/src/rpc-host.ts
+@@ -95,14 +95,19 @@ export class HostConnectionService extends Service implements HostConnectionHand
+ 
+   /** Apply the configured Host/Origin fence, then browser authentication. */
+   requestRejection(request: ConnectionTrustRequest): ConnectionRequestRejection {
+     if (!isTrustedApiRequest(request, this.trustedHosts)) return 403
+-    return this.browserAuth.isAuthenticated(request) ? undefined : 401
++    // madazi trusted-host bypass (patch 03): the platform's auth boundary is the
++    // edge forwardAuth login gate; the in-process BrowserAuth cookie wall is
++    // redundant for trusted hosts, and the trustedHosts fence above still applies.
++    return undefined
+   }
+ 
+   /** Authenticate an index request through the process-token exchange or cookie. */
+   authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean {
+-    return this.browserAuth.authorizeIndex(request, response)
++    // madazi trusted-host bypass (patch 03): serve the index unconditionally;
++    // access control happens at the platform login gate.
++    return true
+   }
+ 
+   /** Add this process's launch token to the clean application URL. */
+   authenticatedUrl(baseUrl: string): string {

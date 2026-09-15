@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-server
+  namespace: madazi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: madazi-server
+  # ★ 滚动更新零停机：maxSurge=1 先起新 Pod，readinessProbe 通过后才终止旧 Pod（maxUnavailable=0 无空窗）
+  # 对话/预览连续性：SSE 任务在 worker Pod 执行不受影响；旧副本在优雅期内继续服务旧连接，
+  # 新副本通过 findPreviewPodByPrefix 恢复预览 Map；前端 EventSource 断线自动降级查 DB 状态
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: madazi-server
+    spec:
+      serviceAccountName: madazi-server
+      terminationGracePeriodSeconds: 45
+      # ★ P3 模板同步 initContainer：启动时把镜像内模板种子按版本门控同步到共享 PVC
+      #   （server 建项目从 PVC 读模板，改模板无需重建镜像——热更新 = 拷到 PVC + 升 PVC 版本号）
+      initContainers:
+      - name: templates-init
+        image: madazi-server:ref-filter-0914
+        imagePullPolicy: IfNotPresent
+        command: ['/bin/sh', '-c']
+        args:
+        - |
+          set -e
+          IMG=/app/templates/.madazi-template-version
+          PVC_DIR=/data/.madazi-templates
+          PVC=$PVC_DIR/.madazi-template-version
+          IMG_VER=$(cat "$IMG" 2>/dev/null || echo 0)
+          PVC_VER=$(cat "$PVC" 2>/dev/null || echo 0)
+          # 版本门控：PVC >= 镜像 → 跳过（保留 PVC 热更新）；否则镜像种子整目录覆盖
+          if [ -n "$PVC_VER" ] && [ "$PVC_VER" -ge "$IMG_VER" ] 2>/dev/null; then
+            echo "[templates-init] up-to-date (PVC $PVC_VER >= image $IMG_VER), skip"
+          else
+            rm -rf "$PVC_DIR"
+            cp -r /app/templates "$PVC_DIR"
+            cp "$IMG" "$PVC"
+            echo "[templates-init] synced templates (image $IMG_VER)"
+          fi
+        volumeMounts:
+        - name: projects-data
+          mountPath: /data
+      containers:
+      - name: server
+        image: madazi-server:ref-filter-0914
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3456
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3456
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          failureThreshold: 6
+        env:
+        - name: PREVIEW_DOMAIN
+          value: <YOUR-DOMAIN>.com
+        # ★ 路径显式注入（去硬编码化 2026-09-12）：与 dsh-web 同根
+        # 项目根 = PVC 挂载点 /app/generated；dsh 数据根 = dsh-web 的 DSH_HOME 同值
+        - name: PROJECTS_ROOT
+          value: /app/generated
+        - name: DSH_HOME
+          value: /app/generated/.dsh
+        # P1 事件总线：跨副本广播（presence/chat/preview-log 控制/构建事件镜像）
+        # 未配置/连不上 → 自动本地降级（单副本行为），不阻塞启动
+        - name: REDIS_URL
+          value: redis://madazi-redis:6379
+        # 插件市场操作的 profile：必须与 dsh-web 实际加载的 --profile web 一致
+        # （$DSH_HOME/profiles/web）；默认单数 /app/generated/.dsh/profile 是
+        # dsh-container-k8s 遗留任务 profile，store 已随 worktree 回收悬空
+        - name: DSH_PROFILE_DIR
+          value: /app/generated/.dsh/profiles/web
+        # 孤儿 preview Pod 确认无主后的宽限删除窗口（10 分钟；构建宽限 15 分钟在代码内独立处理）
+        - name: ORPHAN_GRACE_MS
+          value: "600000"
+        envFrom:
+        - configMapRef:
+            name: madazi-config
+        - secretRef:
+            name: madazi-secret
+        volumeMounts:
+        - name: projects-data
+          mountPath: /data
+        - name: projects-data
+          mountPath: /app/generated
+        resources:
+          limits:
+            memory: "384Mi"
+            cpu: "300m"
+      volumes:
+      - name: projects-data
+        persistentVolumeClaim:
+          claimName: madazi-projects-pvc

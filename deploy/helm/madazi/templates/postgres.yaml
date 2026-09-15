@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-postgres
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: madazi-postgres }
+  template:
+    metadata:
+      labels: { app: madazi-postgres }
+    spec:
+      containers:
+      - name: postgres
+        image: {{ .Values.postgres.image }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: madazi
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef: { name: {{ include "madazi.secretName" . }}, key: POSTGRES_PASSWORD }
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        resources: {{- toYaml .Values.postgres.resources | nindent 10 }}
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim: { claimName: madazi-postgres-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-postgres
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  selector: { app: madazi-postgres }
+  ports:
+  - { port: 5432, targetPort: 5432 }

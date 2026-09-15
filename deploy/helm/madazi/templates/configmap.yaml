@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: madazi-config
+  namespace: {{ include "madazi.ns" . }}
+data:
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}
+  PORT: "3456"
+  # 注意：server deployment env 里的 PREVIEW_DOMAIN（预览子域父域）覆盖此值——
+  # 此处保持主域用于其他组件引用
+  PREVIEW_DOMAIN: {{ .Values.domain | quote }}
+  # DATABASE_URL 不放这里：configmap 值不参与 $(VAR) 展开，须在 server/gateway
+  # deployment env 里显式定义（POSTGRES_PASSWORD 先于 DATABASE_URL）
+  USE_K8S: "1"
+  K8S_NAMESPACE: {{ include "madazi.ns" . | quote }}
+  DSH_IMAGE: {{ include "madazi.dshImage" . | quote }}
+  # preview 镜像按后端技术栈选用专用镜像（server 侧逻辑），runtime 兜底
+  PREVIEW_IMAGE: {{ include "madazi.previewRuntimeImage" . | quote }}
+  PROJECTS_PVC: madazi-projects-pvc
+  PREVIEW_POOL_SIZE: {{ .Values.config.previewPoolSize | quote }}
+  LICENSE_PRIVATE_KEY_PATH: "/app/licenses/private.pem"
+  DSH_ENABLED: {{ .Values.config.dshEnabled | quote }}
+  DSH_PORT: {{ .Values.config.dshPort | quote }}
+  DSH_USE_NIX: {{ .Values.config.dshUseNix | quote }}
+  DSH_NIX_PORT: {{ .Values.config.dshNixPort | quote }}
+  # 官方 DSH Web UI 反代目标（server 同域 /dsh-web → web pod sidecar）
+  DSH_WEB_URL: "http://madazi-dsh-web:3080"
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  # Redis 事件流：短时数据，PG 是长期真相源——不可用时自动降级
+  REDIS_URL: "redis://madazi-redis:6379"

@@ -1,0 +1,106 @@
+# madazi chart 默认值（生产/客户环境起点；本机 colima 开发用 values-colima.yaml 覆盖）
+# 交付三步：
+#   1. cp values.yaml my.yaml，改 domain / image.registry / secrets
+#   2. helm install madazi deploy/helm/madazi -n madazi --create-namespace -f my.yaml
+#   3. 入口流量指向 server NodePort（或按 service.type 改 ClusterIP + 自有 Ingress/LB）
+
+# ── 域名（必改）──────────────────────────────────────────────
+domain: madazi.example.com        # 平台主域：dsh-web --trusted-host 白名单用
+previewDomain: example.com        # 预览子域父域：pv-<id>.<previewDomain> → preview pod
+
+namespace: madazi
+
+# ── 镜像 ────────────────────────────────────────────────────
+# registry 空串 = 本地镜像（k3s import / 预打包镜像）；
+# 客户环境填 "registry.example.com/madazi" 之类，配合 pullSecrets
+image:
+  registry: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []                 # 例 [{ name: regcred }]
+
+# 组件镜像 tag（与构建侧约定一致；madazi-* 为本地构建名）
+tags:
+  server: latest
+  dshWeb: latest
+  dsh: latest                     # 任务 pod 用（server 动态创建，configmap 注入）
+  previewRuntime: latest
+  previewNode: latest
+  previewSpring: latest
+  llmGateway: latest
+
+# ── 存储 ────────────────────────────────────────────────────
+# ★ 数据面节点固定拓扑（P2 拍板）：projects PVC 依赖 local-path 类节点亲和。
+# 客户环境须知：所有挂 projects PVC 的 pod 会被钉在首个调度节点（标准 local-path
+# 行为）；多节点集群无需处理——无状态面自然漂移，数据面天然留原地。
+# 若集群只有网络存储 SC（NFS/CephFS），必须先评估 inotify/SQLite/硬链接三杀手
+# 再用（见 docs/ARCHITECTURE.md §2.8），默认 local-path 语义最稳。
+storage:
+  className: ""                   # 空 = 集群默认 SC（k3s=local-path）
+  projectsSize: 20Gi
+  postgresSize: 5Gi
+
+# ── 凭证（必改；或用 existingSecret 复用已有）────────────────
+secrets:
+  existingSecret: ""              # 非空 = 复用该名 Secret，下面内联值全部忽略
+  jwtSecret: change-me-jwt
+  postgresPassword: change-me-pg
+  keyMasterSecret: change-me-key  # llm-gateway 密钥托管加密
+  svcToken: change-me-svc         # server↔dsh 内部调用 token
+
+# ── 服务暴露 ────────────────────────────────────────────────
+# 默认 NodePort（裸机 k3s + frp/LB 直连场景）；云厂商 Ingress 场景改 ClusterIP
+# traefik.enabled=true 时入口 NodePort 归 traefik（server 自动退 ClusterIP）
+service:
+  type: NodePort
+  serverNodePort: 30456
+  gatewayNodePort: 30459          # llm-gateway（dsh 模型腿直连入口）
+
+# ── 入口网关（P3 标准拓扑）──────────────────────────────────
+# Traefik 承接 server 的 dsh 分流职责：dsh 事件流/RPC 直达 dsh-web，
+# server 滚动发版不再断 dsh WS。frp/LB 公网入口指向 traefik NodePort。
+# false = 退回旧拓扑（server 直接 NodePort 暴露 + 进程内反代）
+traefik:
+  enabled: true
+  image: traefik:v3.5            # 本地导入场景需 docker save | k3s ctr import
+  resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { cpu: 500m, memory: 256Mi } }
+
+# ── 组件开关与参数 ──────────────────────────────────────────
+server:
+  replicas: 1                     # P1a 已支持多副本（Redis 总线状态外移）
+  resources: { requests: { cpu: 100m, memory: 128Mi }, limits: { cpu: "2", memory: 1Gi } }
+
+dshWeb:
+  replicas: 1                     # ★ 铁律：必须 1（单进程会话所有权，见 ARCHITECTURE.md §2.5）
+  resources:
+    main: { requests: { cpu: 500m, memory: 512Mi }, limits: { cpu: "2", memory: 2Gi } }
+    proxy: { requests: { cpu: 50m, memory: 32Mi }, limits: { cpu: 200m, memory: 128Mi } }
+
+llmGateway:
+  replicas: 1
+  upstreamBaseUrl: https://api.deepseek.com/v1
+  grantUsd: "100"
+  resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { cpu: "1", memory: 512Mi } }
+
+postgres:
+  image: postgres:16-alpine
+  resources: { limits: { memory: 192Mi, cpu: 150m } }
+
+redis:
+  image: redis:7-alpine
+  # 纯内存事件总线（P1a）：消息不落盘，重启即全员重报快照——勿加持久化
+  resources: { requests: { cpu: 20m, memory: 32Mi }, limits: { cpu: 500m, memory: 320Mi } }
+
+# preview 预热池（pool 模式 StatefulSet；server 按需 scale，0 = 关闭预热）
+previewPool:
+  replicas: 0
+  resources: { limits: { memory: 512Mi, cpu: 300m } }
+
+# 平台杂项（configmap 全量）
+config:
+  nodeEnv: production
+  logLevel: info
+  previewPoolSize: "2"
+  dshEnabled: "true"
+  dshPort: "3457"
+  dshUseNix: "true"
+  dshNixPort: "3458"

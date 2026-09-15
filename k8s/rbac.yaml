@@ -1,0 +1,39 @@
+# madazi-server 动态管理 preview/dsh Pod 的权限（2026-08-19 自研链删除，资源名保持不变避免重建）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: madazi-server
+  namespace: madazi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: madazi-worker-manager
+  namespace: madazi
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["get", "create"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: madazi-server-worker-manager
+  namespace: madazi
+subjects:
+- kind: ServiceAccount
+  name: madazi-server
+  namespace: madazi
+roleRef:
+  kind: Role
+  name: madazi-worker-manager
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,8 @@
+{
+  "id": "react-node",
+  "name": "React + Node.js",
+  "description": "前后端分离 React 19 + Node.js (Express) + PostgreSQL。内置 RBAC 管理后台（登录/用户/角色/菜单/字典 + 示例业务 CRUD），MUI 9 + Vite",
+  "tech_stack": "react-node",
+  "app_types": ["web", "internal"],
+  "modules": ["用户管理", "权限控制", "角色管理", "菜单管理", "字典管理", "CRUD 表单", "数据报表"]
+}

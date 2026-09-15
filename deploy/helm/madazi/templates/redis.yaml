@@ -1,0 +1,50 @@
+# P1a 事件总线：server 跨副本 pub/sub + presence 快照交换。
+# ★ 纯内存（无 PVC）：总线消息不落盘，副本状态可重建；重启清空 = 全员重新上报快照。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-redis
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: madazi-redis }
+  template:
+    metadata:
+      labels: { app: madazi-redis }
+    spec:
+      containers:
+      - name: redis
+        image: {{ .Values.redis.image }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - redis-server
+        - --maxmemory
+        - 256mb
+        - --maxmemory-policy
+        - noeviction
+        - --save
+        - ""
+        - --appendonly
+        - "no"
+        ports:
+        - containerPort: 6379
+        resources: {{- toYaml .Values.redis.resources | nindent 10 }}
+        readinessProbe:
+          tcpSocket: { port: 6379 }
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket: { port: 6379 }
+          initialDelaySeconds: 10
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-redis
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  selector: { app: madazi-redis }
+  ports:
+  - { port: 6379, targetPort: 6379 }

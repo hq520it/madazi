@@ -1,0 +1,8 @@
+{
+  "id": "uniapp-springboot",
+  "name": "uni-app + Spring Boot",
+  "description": "前后端分离，uni-app Vue 3 小程序前端 + Spring Boot 3 后端 + PostgreSQL",
+  "tech_stack": "uniapp-springboot",
+  "app_types": ["miniapp", "web"],
+  "modules": ["用户管理", "权限控制", "CRUD 表单", "数据报表", "文件上传"]
+}

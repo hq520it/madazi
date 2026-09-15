@@ -1,0 +1,7 @@
+# Insert the madazi hello demo panel plugin (P1 dock panel).
+# Note: production wiring of apiBase (madazi-server service URL) is pending;
+# the plugin is staged in the image tree but not enabled in the profile
+# bundles until that config is in place.
+- insert:
+    - id: madazi-hello
+      name: '@madazi/dsh-plugin-madazi'

@@ -1,0 +1,9 @@
+{
+  "id": "vue-node",
+  "name": "Vue + Node.js",
+  "description": "Vue 3 + Vite 前端 + Node.js Express + SQLite 后端",
+  "app_types": ["web", "internal"],
+  "backend": "node",
+  "frontend": "vue",
+  "features": ["vue3", "vite", "express", "sqlite", "uuid"]
+}

@@ -1,0 +1,17 @@
+# madazi-preview-spring: Spring Boot 后端预览镜像（node + PostgreSQL + JDK17 + Maven）
+# 基于 madazi-preview-node:v02（含短 URL 预览 entrypoint/start），仅追加 Java 工具链
+# 注意：maven:3.9-eclipse-temurin-17-alpine 无 arm64 manifest，JDK/Maven 改走 alpine 源（阿里云镜像）
+FROM madazi-preview-node:v03
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.huaweicloud.com|g' /etc/apk/repositories \
+  # fontconfig + ttf-dejavu：alpine JDK headless AWT 缺字体，验证码等图片生成直接 InternalError
+  && apk add --no-cache openjdk17 maven fontconfig ttf-dejavu
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ENV PATH=$JAVA_HOME/bin:$PATH
+ENV MAVEN_CONFIG=/root/.m2
+RUN mkdir -p /root/.m2
+COPY settings.xml /root/.m2/settings.xml
+
+# HotSwapAgent：后端改代码自动热替换（热刷新）。阿里云 maven 源，避免 GitHub 直连超时
+RUN curl -fsSL -o /opt/hotswap-agent.jar https://maven.aliyun.com/repository/public/org/hotswapagent/hotswap-agent/2.0.1/hotswap-agent-2.0.1.jar

@@ -1,0 +1,12 @@
+packages:
+  - .
+
+# ★ 运行时 pnpm store 指向 PVC（/app/generated 挂载 PVC 后可写）：
+# .modules.yaml 快照会记录此 storeDir，避免运行时默认 /root/.local（rootfs 只读）SQLite 打不开
+storeDir: /app/generated/.dsh/.pnpm-store
+nodeLinker: hoisted
+autoInstallPeers: false
+# 运行时 dsh plugin add 不带 --config.minimumReleaseAge，须在此固化（新发布插件当日即可装）
+minimumReleaseAge: 0
+allowBuilds:
+  node-pty: true

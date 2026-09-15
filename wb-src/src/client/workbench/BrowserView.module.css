@@ -1,0 +1,407 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-base);
+}
+
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+
+.nav {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.address {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.address:focus {
+  outline: 1px solid var(--dsw-alias-border-l1);
+  outline-offset: 0;
+}
+
+.address[data-invalid] {
+  border-color: var(--dsw-alias-state-negative, #d33);
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hint {
+  flex: none;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.hint[data-kind='inspect'] {
+  background: color-mix(in srgb, var(--dsw-alias-accent-primary, #4c8dff) 16%, var(--dsw-alias-bg-base));
+}
+
+.hint[data-kind='ok'] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.hint[data-kind='err'] {
+  color: var(--dsw-alias-state-negative, #b42318);
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--dsw-alias-bg-base);
+}
+
+.frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.root[data-inspect] .frame {
+  cursor: crosshair;
+}
+
+.root[data-inspect] .stage {
+  outline: 2px solid color-mix(in srgb, var(--dsw-alias-accent-primary, #1a73e8) 65%, transparent);
+  outline-offset: -2px;
+}
+
+.frame[hidden] {
+  display: none;
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 28px;
+  max-width: 520px;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.emptyHint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.loading {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  pointer-events: none;
+}
+
+/* ── fork 定制：madazi 预览控制 ── */
+.pvCtl {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 2px;
+}
+
+/* ★ 统一按钮设计语言：与 DevToolsPanel .filter 一致（--dsw-alias-* 变量、22px 高、4px 圆角） */
+
+.pvActBtn {
+  height: 22px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+
+.pvActBtn[data-on] {
+  background: rgba(52, 199, 89, .16);
+  color: #34c759;
+}
+
+.pvActBtn:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.pvActBtn:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.pvActBtn[data-on]:hover:not(:disabled) {
+  background: rgba(52, 199, 89, .24);
+  color: #34c759;
+}
+
+.pvRstBtn {
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pvRstBtn:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.pvRstBtn:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* 项目选择器：与工具栏按钮统一高度 */
+.pvWrap {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 2px;
+  padding-left: 6px;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+}
+
+.pvMain {
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pvMain:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.pvMain:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.pvCaret {
+  height: 22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.pvCaret:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* 占位卡片启动按钮：用 --dsw-alias 变量，不用硬编码蓝色 */
+.pvStartBtn {
+  margin-top: 14px;
+  padding: 8px 22px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--dsw-alias-accent-primary, #4c8dff);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity .12s;
+}
+
+.pvStartBtn:hover {
+  opacity: .88;
+}
+
+/* ── fork 定制：占位页按钮行 + AI 修复幽灵按钮 ── */
+.pvStartRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pvStartRow .pvStartBtn {
+  margin-top: 14px;
+}
+
+.pvGhostBtn {
+  margin-top: 14px;
+  padding: 8px 18px;
+  border: 1px solid var(--dsw-alias-accent-primary, #4c8dff);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-accent-primary, #4c8dff);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.pvGhostBtn:hover {
+  background: rgba(76, 141, 255, .12);
+}
+
+.pvGhostBtn:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.pvMenu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 20;
+  min-width: 240px;
+  max-width: 320px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+
+.pvRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--dsw-alias-label-primary);
+}
+
+.pvRow:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.pvRow[data-disabled] {
+  opacity: .45;
+  cursor: default;
+}
+
+.pvRow[data-disabled]:hover {
+  background: transparent;
+}
+
+.pvMenuTitle {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pvRow[data-cur] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.pvDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pvName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pvTag {
+  flex: none;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.pvTag[data-kind='soft'] {
+  background: rgba(76, 141, 255, .14);
+  color: #4c8dff;
+}
+
+.pvTag[data-kind='hard'] {
+  background: rgba(220, 38, 38, .12);
+  color: #ef4444;
+}
+
+.pvEmpty {
+  padding: 12px 10px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+}

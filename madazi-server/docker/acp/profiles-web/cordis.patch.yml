@@ -1,0 +1,4 @@
+# locale 服务：dsh-workbench-plugin 0.1.25 起官方已修复 dsh-client-runtime 注册问题，
+# 不再需要禁用（0.1.24 及之前需禁用，见 git 历史 cordis.patch.yml 旧版）。
+# 保留空数组占位：dsh 要求该文件必须为顶层 YAML 数组。
+[]

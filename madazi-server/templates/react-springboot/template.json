@@ -1,0 +1,8 @@
+{
+  "id": "react-springboot",
+  "name": "React + Spring Boot",
+  "description": "前后端分离，React 19 前端 + Spring Boot 3 后端 + PostgreSQL",
+  "tech_stack": "react-springboot",
+  "app_types": ["web", "internal"],
+  "modules": ["用户管理", "权限控制", "CRUD 表单", "数据报表", "文件上传"]
+}

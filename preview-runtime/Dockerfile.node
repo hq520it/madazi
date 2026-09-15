@@ -1,0 +1,17 @@
+# madazi-preview-node: Node 后端 / 纯前端 预览镜像（node + PostgreSQL，无 Java/Go/MariaDB）
+# entrypoint 与 runtime 完全同一份（动态探测后端类型），镜像只差预装组件
+FROM docker.1ms.run/library/node:18-alpine
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.huaweicloud.com|g' /etc/apk/repositories \
+  && apk add --no-cache bash curl postgresql16 postgresql16-contrib redis \
+  && mkdir -p /var/lib/postgresql/data /run/postgresql \
+  && chown -R postgres:postgres /var/lib/postgresql /run/postgresql \
+  && corepack enable \
+  && (COREPACK_NPM_REGISTRY=https://registry.npmmirror.com corepack prepare pnpm@9.15.0 --activate 2>/dev/null || npm i -g pnpm@9 --registry=https://registry.npmmirror.com)
+
+COPY entrypoint.sh /app/entrypoint.sh
+COPY start.sh /app/start.sh
+RUN chmod +x /app/entrypoint.sh /app/start.sh
+
+WORKDIR /app
+ENTRYPOINT ["bash", "/app/entrypoint.sh"]

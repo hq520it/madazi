@@ -1,0 +1,10 @@
+apiVersion: v2
+name: madazi
+description: |
+  madazi 平台 —— AI 应用生成工作台（madazi-server 平台 API + dsh-web 官方工作台 +
+  llm-gateway 计费网关 + Postgres/Redis 数据层 + preview 动态 pod）。
+  一个 chart 覆盖云厂商 k8s（EKS/ACK/AKS）与裸机 k3s 两种交付。
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [madazi, dsh, ai-workbench]

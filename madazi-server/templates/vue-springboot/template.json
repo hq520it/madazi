@@ -1,0 +1,8 @@
+{
+  "id": "vue-springboot",
+  "name": "Vue + Spring Boot (Madazi)",
+  "description": "前后端分离，Vue 3 (Element Plus) 前端 + Spring Boot 3 (Madazi-Vue) 后端 + MariaDB + Redis，内置用户管理、角色权限 RBAC、菜单、部门、岗位、字典、操作/登录日志",
+  "tech_stack": "vue-springboot",
+  "app_types": ["web", "internal"],
+  "modules": ["用户管理", "角色权限 RBAC", "菜单管理", "部门管理", "岗位管理", "字典管理", "操作日志", "登录日志", "文件上传"]
+}

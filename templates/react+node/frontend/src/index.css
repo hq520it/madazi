@@ -1,0 +1,6 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1015; color: #e1e1e3; }
+#root { min-height: 100vh; }
+button { cursor: pointer; padding: 8px 16px; border: none; border-radius: 6px; background: #5e6ad2; color: white; font-size: 14px; }
+button:hover { opacity: 0.9; }
+input, textarea { padding: 8px 12px; border: 1px solid #2a2b35; border-radius: 6px; background: #16171d; color: #e1e1e3; font-size: 14px; }

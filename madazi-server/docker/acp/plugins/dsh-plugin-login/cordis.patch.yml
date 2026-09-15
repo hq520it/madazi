@@ -1,0 +1,7 @@
+# Insert the madazi login gate plugin (S2-1): full-screen auth overlay when
+# unauthenticated, user chip + logout when logged in. The client half is
+# self-contained (platform cookie + server-side auth middleware); the node
+# half is a placeholder keeping the dual-face module shape.
+- insert:
+    - id: madazi-login
+      name: '@madazi/dsh-plugin-login'

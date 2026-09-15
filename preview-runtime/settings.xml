@@ -1,0 +1,14 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <!-- ★ 共享依赖缓存：localRepository 放 PVC /data/.m2-repo，
+       多项目 Pod 复用（首次下载 5-10 分钟 → 二次秒级命中）。
+       所有 mvn 调用（backend-start.sh / start.sh fallback）统一读此配置 -->
+  <localRepository>/data/.m2-repo</localRepository>
+  <mirrors>
+    <mirror>
+      <id>aliyun</id>
+      <name>Aliyun Maven Mirror</name>
+      <mirrorOf>*</mirrorOf>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+  </mirrors>
+</settings>

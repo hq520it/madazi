@@ -1,0 +1,44 @@
+# preview 预热池（pool 模式）：server 按需 scale，replicas 0 = 关闭预热
+# 注意：与 server 动态创建的每项目 preview pod 是两套机制，此 StatefulSet 仅提供
+# 预热容器池（PREVIEW_MODE=pool），降低首启动延迟
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: madazi-preview
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  serviceName: madazi-preview
+  replicas: {{ .Values.previewPool.replicas }}
+  selector:
+    matchLabels: { app: madazi-preview }
+  template:
+    metadata:
+      labels: { app: madazi-preview }
+    spec:
+      containers:
+      - name: preview
+        image: {{ include "madazi.previewRuntimeImage" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PREVIEW_MODE
+          value: pool
+        volumeMounts:
+        - name: projects-data
+          mountPath: /data
+        resources: {{- toYaml .Values.previewPool.resources | nindent 10 }}
+      volumes:
+      - name: projects-data
+        persistentVolumeClaim: { claimName: madazi-projects-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-preview
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  clusterIP: None
+  ports:
+  - { port: 3000, targetPort: 3000 }
+  selector: { app: madazi-preview }

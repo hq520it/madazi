@@ -1,0 +1,6 @@
+{
+  "name": "React + Node.js (Express)",
+  "id": "react+node",
+  "description": "React 18 + Vite + Node.js Express 后端，含 CRUD 范例",
+  "tech_stack": "react+node"
+}

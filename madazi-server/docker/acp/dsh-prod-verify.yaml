@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dsh-prod-verify
+  namespace: madazi
+spec:
+  restartPolicy: Never
+  initContainers:
+    - name: profile-init
+      image: madazi-dsh:latest
+      imagePullPolicy: Never
+      command: ["/bin/sh", "-c"]
+      args:
+        - "mkdir -p /app/generated/.dsh/profile && [ -f /app/generated/.dsh/profile/cordis.yml ] || cp -r /opt/dsh-profile/. /app/generated/.dsh/profile/"
+      volumeMounts:
+        - { name: projects, mountPath: /app/generated }
+  containers:
+    - name: dsh
+      image: madazi-dsh:latest
+      imagePullPolicy: Never
+      ports: [{ containerPort: 7001 }]
+      envFrom:
+        - { configMapRef: { name: madazi-config } }
+        - { secretRef: { name: madazi-secret } }
+      env:
+        - { name: HOME, value: /tmp }
+        - { name: DSH_SNAPSHOT_SESSIONS_ROOT, value: /app/generated/.dsh-sessions }
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: { drop: ["ALL"] }
+      volumeMounts:
+        - { name: projects, mountPath: /app/generated }
+        - { name: projects, mountPath: /app, subPath: .dsh/profile }
+        - { name: tmp, mountPath: /tmp }
+        - { name: run, mountPath: /run }
+  volumes:
+    - name: projects
+      persistentVolumeClaim: { claimName: madazi-projects-pvc }
+    - name: tmp
+      emptyDir: { medium: Memory, sizeLimit: 256Mi }
+    - name: run
+      emptyDir: { medium: Memory, sizeLimit: 16Mi }

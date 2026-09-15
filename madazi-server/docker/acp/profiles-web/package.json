@@ -1,0 +1,20 @@
+{
+  "name": "dsh-profile-web",
+  "private": true,
+  "dependencies": {
+    "dsh-plugin": "^0.1.1",
+    "dsh-workbench-plugin": "file:./dsh-workbench-plugin-0.1.35.tgz"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-workbench-plugin",
+        "dsh-plugin",
+        "@madazi/dsh-plugin-login",
+        "@madazi/dsh-plugin-madazi"
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+packages:
+  - "."
+allowBuilds:
+  '@deepseek-ai/dsh-subprocess-local': true
+  koffi: true
+  node-pty: true

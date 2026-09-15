@@ -1,0 +1,104 @@
+# Traefik v3 入口网关（P3 2026-08-24）
+# ★ 动机：dsh-web 的 WS（events.mux 事件流等）不再路过 madazi-server —— server 滚动发版
+#   对 dsh 会话零闪断；登录门以 forwardAuth（server /api/auth/check）形式保留。
+# ★ 形态：独立 Deployment（本集群 k3s 启动带 --disable traefik，原生 traefik 不存在，零冲突）。
+# ★ 路由表在 traefik-routes.yaml（IngressRoute + Middleware）；CRD 在 traefik-crd.yaml。
+# ★ 已接管 NodePort 30456（原 server NodePort，server Service 已退 ClusterIP）；
+#   切换前曾在临时 NodePort 30460 完成内网 E2E 验证。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik
+  namespace: madazi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: madazi-traefik
+rules:
+  - apiGroups: [""]
+    # configmaps/nodes：v3.4+ CRD provider 必需（缺 configmaps → informer cache sync 卡死，路由永不加载）
+    resources: [services, endpoints, secrets, nodes, configmaps]
+    verbs: [get, list, watch]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: [endpointslices]
+    verbs: [get, list, watch]
+  - apiGroups: ["networking.k8s.io"]
+    resources: [ingresses, ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: ["traefik.io"]
+    resources: ["*"]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: madazi-traefik
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: madazi-traefik
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: madazi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: madazi
+  labels: { app: traefik }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: traefik }
+  template:
+    metadata:
+      labels: { app: traefik }
+    spec:
+      serviceAccountName: traefik
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: traefik
+          image: traefik:v3.5
+          imagePullPolicy: IfNotPresent
+          args:
+            - --entryPoints.web.address=:80
+            # ★ WS/长连接：默认 readTimeout=60s / idleTimeout=180s 会杀静默事件流 WS，必须关
+            - --entryPoints.web.transport.respondingTimeouts.readTimeout=0
+            - --entryPoints.web.transport.respondingTimeouts.idleTimeout=0
+            # 内部管理入口（ping 探针用，不对外）
+            - --entryPoints.traefik.address=:8080
+            - --ping.entryPoint=traefik
+            - --providers.kubernetesCRD=true
+            - --providers.kubernetesIngress=false
+            - --api.dashboard=false
+            - --log.level=INFO
+            - --accesslog=true
+          ports:
+            - { name: web, containerPort: 80 }
+            - { name: traefik, containerPort: 8080 }
+          readinessProbe:
+            httpGet: { path: /ping, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /ping, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  namespace: madazi
+spec:
+  type: NodePort
+  selector: { app: traefik }
+  ports:
+    # ★ P3 切换完成（2026-08-24）：正式占用公网入口 30456（frp 7456 → 此处）
+    - { name: web, port: 80, targetPort: 80, nodePort: 30456 }

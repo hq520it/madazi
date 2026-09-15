@@ -1,0 +1,11 @@
+# madazi-dsh-bypass — 基于线上 madazi-dsh:latest 的增量镜像
+# ★ P1.5 旁路：内桥直写 Redis + 直落 DB（ioredis + pg，npmmirror 源）
+FROM madazi-dsh:latest
+
+COPY dsh-bridge-tcp.js /app/dsh-bridge-tcp.js
+
+# ioredis + pg（npmmirror 源；装到 /app/node_modules——内桥 require 从 /app 向上解析）
+RUN npm install --prefix /app ioredis pg --registry=https://registry.npmmirror.com \
+    && rm -rf /app/node_modules/.cache
+
+ENTRYPOINT ["node", "/app/dsh-bridge-tcp.js"]

@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: madazi-server
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  replicas: {{ .Values.server.replicas }}
+  selector:
+    matchLabels: { app: madazi-server }
+  # 滚动更新零停机：maxSurge=1 先起新 Pod，readiness 通过后才终止旧 Pod
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels: { app: madazi-server }
+    spec:
+      serviceAccountName: madazi-server
+      terminationGracePeriodSeconds: 45
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: server
+        image: {{ include "madazi.serverImage" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 3456
+        readinessProbe:
+          httpGet: { path: /api/health, port: 3456 }
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          failureThreshold: 6
+        env:
+        # POSTGRES_PASSWORD 必须在 DATABASE_URL 之前（k8s $(VAR) 展开依赖定义顺序）
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef: { name: {{ include "madazi.secretName" . }}, key: POSTGRES_PASSWORD }
+        - name: DATABASE_URL
+          value: "postgresql://postgres:$(POSTGRES_PASSWORD)@madazi-postgres:5432/madazi"
+        # 预览子域父域：pv-<id>.<previewDomain>（覆盖 configmap 同名值）
+        - name: PREVIEW_DOMAIN
+          value: {{ .Values.previewDomain | quote }}
+        # ★ 路径显式注入（去硬编码化）：与 dsh-web 同根（PVC /app/generated / .dsh）
+        - name: PROJECTS_ROOT
+          value: /app/generated
+        - name: DSH_HOME
+          value: /app/generated/.dsh
+        # P1 事件总线：未配置/连不上 → 自动本地降级（单副本行为），不阻塞启动
+        - name: REDIS_URL
+          value: "redis://madazi-redis:6379"
+        # 插件市场操作的 profile：与 dsh-web 实际加载的 --profile web 一致
+        - name: DSH_PROFILE_DIR
+          value: /app/generated/.dsh/profiles/web
+        # 孤儿 preview Pod 宽限删除窗口（10 分钟）
+        - name: ORPHAN_GRACE_MS
+          value: "600000"
+        envFrom:
+        - configMapRef: { name: madazi-config }
+        - secretRef: { name: {{ include "madazi.secretName" . }} }
+        volumeMounts:
+        - name: projects-data
+          mountPath: /data
+        - name: projects-data
+          mountPath: /app/generated
+        resources: {{- toYaml .Values.server.resources | nindent 10 }}
+      volumes:
+      - name: projects-data
+        persistentVolumeClaim: { claimName: madazi-projects-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: madazi-server
+  namespace: {{ include "madazi.ns" . }}
+spec:
+  {{- if and (eq .Values.service.type "NodePort") (not .Values.traefik.enabled) }}
+  # traefik.enabled=true 时入口 NodePort 归 traefik，server 退 ClusterIP（P3 拓扑）
+  type: NodePort
+  {{- end }}
+  ports:
+  - port: 3456
+    targetPort: 3456
+    {{- if and (eq .Values.service.type "NodePort") (not .Values.traefik.enabled) }}
+    nodePort: {{ .Values.service.serverNodePort }}
+    {{- end }}
+  selector: { app: madazi-server }
