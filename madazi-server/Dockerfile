@@ -24,7 +24,6 @@ COPY scripts/ ./scripts/
 COPY templates/ ./templates/
 COPY preview-templates/ ./preview-templates/
 COPY public/ ./public/
-COPY .env ./
 
 EXPOSE 3456
 

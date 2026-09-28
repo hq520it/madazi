@@ -677,7 +677,7 @@ packages:
         optional: true
 
   dsh-workbench-plugin@file:dsh-workbench-plugin-0.1.35.tgz:
-    resolution: {integrity: sha512-maYXhhEekz9qbH/dHvTaueFTXD2Ad4P6A37cM7Y5XqQ4hbBS5OeR666Btgu8MoT2EWHI/F3qzNh5CoykSpw/cg==, tarball: file:dsh-workbench-plugin-0.1.35.tgz}
+    resolution: {integrity: sha512-v2VYEXUbJnIl04nAdYSsLx755VI5IkTh+YXxPl70tGFN48XtlRAgrQM/bwqEsigAoTusMRWQvKZTbfwkOiG+EQ==, tarball: file:dsh-workbench-plugin-0.1.35.tgz}
     version: 0.1.35
     engines: {node: ^22.19.0 || >=24.0.0}
     peerDependencies:

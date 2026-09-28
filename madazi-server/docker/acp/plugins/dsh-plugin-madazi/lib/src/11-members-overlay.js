@@ -20,7 +20,8 @@
 			sub.addEventListener("click", (e) => e.stopPropagation());
 			row.appendChild(sub);
 			const fail = () => { sub.remove(); if (row.dataset) row.dataset.madaziMetaDone = ""; };
-			madaziFetch("/projects").then((list) => {
+			// ★ 复用元数据缓存（src/10-fetch-online.js）：高频重扫只发一次批量请求，避免轮询风暴
+			cachedProjects().then((list) => {
 				const projects = Array.isArray(list) ? list : [];
 				// ★ 项目归属按 workspace 路径解析，绝不因「标题≠项目名」误藏分组行：
 				//   侧栏「项目重命名」只改 dsh 工作区标题（workspace.title），项目名
@@ -45,7 +46,7 @@
 				row.dataset.madaziMember = "1"; // ★ 成员项目
 				setSectionHidden(false); // ★ 成员项目：恢复该组会话行显示
 				row.dataset.madaziProjectId = p.id;
-				return Promise.all([madaziFetch("/projects/" + p.id + "/members"), madaziFetch("/auth/me")]).then(([mv, mev]) => {
+				return Promise.all([cachedMembers(p.id), cachedMe()]).then(([mv, mev]) => {
 					if (!mv || !mv.owner) { fail(); return null; }
 					sub.innerHTML = "";
 					const owner = mv.owner;

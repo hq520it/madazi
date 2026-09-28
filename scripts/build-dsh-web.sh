@@ -10,14 +10,14 @@
 set -euo pipefail
 
 COLIMA_PROFILE=madazi
-DOCKER_HOST_SOCK="unix://$HOME/.colima/${COLIMA_PROFILE}/docker.sock"
-MADAZI=$HOME/code/madazi
+DOCKER_HOST_SOCK="unix:///Users/mac/.colima/${COLIMA_PROFILE}/docker.sock"
+MADAZI="$(cd "$(dirname "$0")/.." && pwd)"
 WB_SRC="${MADAZI}/wb-src"
 ACP="${MADAZI}/madazi-server/docker/acp"
 PROFILES_WEB="${ACP}/profiles-web"
 IMAGE=madazi-dsh-web:latest
 TGZ_NAME=dsh-workbench-plugin-0.1.35.tgz
-NS=madazi
+NS="${NS:-madazi}"
 DEPLOY=madazi-dsh-web
 NO_CACHE=""
 [ "${1:-}" = "--no-cache" ] && NO_CACHE="--no-cache"
@@ -199,7 +199,7 @@ ok "rollout 完成 ${DEPLOY} 就绪"
 # ── 7 线上验证 ──────────────────────────────────────────────
 say "7/7 线上验证"
 sleep 3
-CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://<YOUR-DOMAIN>/" || true)
+CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://madazi.gaoyuanqiu.com/" || true)
 [ "${CODE}" = "200" ] || die "工作台入口 HTTP ${CODE}（预期 200）"
 ok "工作台入口 HTTP ${CODE}"
 # ★ PVC 侧实证：initContainer 真把新 workbench 插件铺进去了（版本闸门放行的最终证据）

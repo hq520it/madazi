@@ -2368,6 +2368,22 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				return j;
 			} catch (e) { return { error: String((e && e.message) || e) }; }
 		};
+		// ★ 项目元数据拉取节流（2026-09-18）：MutationObserver 驱动的行增强（injectMeta）在 dsh 官方
+		//   树行重建时会反复触发，此前每行每次无缓存拉「全量/projects + members + me」→ 高频轮询风暴
+		//   （实测 45s 3011 次 ≈ 67 req/s；304 虽无 body，server 仍全量查库）。这里做短 TTL 缓存 +
+		//   同 key 并发去重；WS 事件（member_added/project_created）后 clear 失效，不牺牲实时性。
+		const _projectsMetaCache = new Map(); // key -> { at, promise }（与 12-meta-reporting._metaCache 命名区分）
+		const projectMetaCacheGet = (key, ttlMs, fn) => {
+			const hit = _projectsMetaCache.get(key);
+			if (hit && Date.now() - hit.at < ttlMs) return hit.promise;
+			const p = Promise.resolve(fn()).catch((e) => ({ error: String((e && e.message) || e) }));
+			_projectsMetaCache.set(key, { at: Date.now(), promise: p });
+			return p;
+		};
+		window.__madaziClearMetaCache = () => _projectsMetaCache.clear();
+		const cachedProjects = () => projectMetaCacheGet("listProjects", 8000, () => madaziFetch("/projects"));
+		const cachedMembers = (pid) => projectMetaCacheGet("members:" + pid, 20000, () => madaziFetch("/projects/" + pid + "/members"));
+		const cachedMe = () => projectMetaCacheGet("auth-me", 20000, () => madaziFetch("/auth/me"));
 		// ★ 工作区真实路径解析（2026-09-12 去硬编码化）：server 按部署形态唯一推导
 		//   （k8s=/app/generated/...；单机版=注入的 PROJECTS_ROOT/...），经 B12 安全专用接口
 		//   GET /api/projects/:id/workspace-path（挂 projectAccess）下发，前端不再拼 /app/generated
@@ -2485,6 +2501,7 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 						}
 						// ★ 协同实时：被加进项目 → 自动创建 workspace + 通知项目列表刷新
 						if (m && m.type === "member_added") {
+							window.__madaziClearMetaCache && window.__madaziClearMetaCache();
 							_autoAdoptProject(m);
 							// 清未分组会话过滤标记并重扫（被加进项目后历史会话恢复显示）
 							try { window.__madaziUngroupedRescan && window.__madaziUngroupedRescan(); } catch { /* ignore */ }
@@ -2493,6 +2510,7 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 						// ★ 协同实时：新项目 → 刷新项目列表 + membership 成员表（管理员/成员即时看到，
 						//   gate 立即放行新项目，无需等 30s 轮询）
 						if (m && m.type === "project_created") {
+							window.__madaziClearMetaCache && window.__madaziClearMetaCache();
 							try { if (window.__madaziMembershipRefresh) window.__madaziMembershipRefresh(); } catch { /* ignore */ }
 							for (const cb of window.__madaziProjectRefresh) { try { cb(m); } catch { /* ignore */ } }
 						}
@@ -2556,7 +2574,14 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 				}
 			};
 			scan();
-			const mo = new MutationObserver(() => scan());
+			// ★ 去抖（2026-09-18）：MutationObserver 高频触发（官方树行重建/排序）→ 合并为下一次宏任务
+			//   执行一次扫描；配合 injectMeta 元数据缓存，彻底消除逐行重复请求。
+			let _rowMetaTimer = null;
+			const scheduleScan = () => {
+				if (_rowMetaTimer) return;
+				_rowMetaTimer = setTimeout(() => { _rowMetaTimer = null; scan(); }, 60);
+			};
+			const mo = new MutationObserver(() => scheduleScan());
 			mo.observe(document.body, { childList: true, subtree: true, characterData: true });
 		};
 
@@ -2585,7 +2610,8 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 			sub.addEventListener("click", (e) => e.stopPropagation());
 			row.appendChild(sub);
 			const fail = () => { sub.remove(); if (row.dataset) row.dataset.madaziMetaDone = ""; };
-			madaziFetch("/projects").then((list) => {
+			// ★ 复用元数据缓存（src/10-fetch-online.js）：高频重扫只发一次批量请求，避免轮询风暴
+			cachedProjects().then((list) => {
 				const projects = Array.isArray(list) ? list : [];
 				// ★ 项目归属按 workspace 路径解析，绝不因「标题≠项目名」误藏分组行：
 				//   侧栏「项目重命名」只改 dsh 工作区标题（workspace.title），项目名
@@ -2610,7 +2636,7 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 				row.dataset.madaziMember = "1"; // ★ 成员项目
 				setSectionHidden(false); // ★ 成员项目：恢复该组会话行显示
 				row.dataset.madaziProjectId = p.id;
-				return Promise.all([madaziFetch("/projects/" + p.id + "/members"), madaziFetch("/auth/me")]).then(([mv, mev]) => {
+				return Promise.all([cachedMembers(p.id), cachedMe()]).then(([mv, mev]) => {
 					if (!mv || !mv.owner) { fail(); return null; }
 					sub.innerHTML = "";
 					const owner = mv.owner;

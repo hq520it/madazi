@@ -113,6 +113,12 @@ data:
             proxy_read_timeout 3600s;
         }
         # 前端静态 + 其余 → dsh-web 自身 3081
+        # ★ MADAZI loopback 围栏放宽注入（2026-09-21）：patch 01-loopback 只打了
+        #   client 侧 isLoopback 判定，frontend-static renderIndex 的
+        #   window.__DSH_TRUSTED_LOOPBACK__=true 注入在编译产物中缺失 →
+        #   公网域名访问时 isLoopback=false → settings 服务不可用 → 设置-模型 tab
+        #   报「settings are unavailable in this browser」。nginx 侧 sub_filter 兜底注入：
+        #   先让上游给未压缩 HTML（Accept-Encoding ""），替换 head 注入全局标记。
         location / {
             proxy_pass http://127.0.0.1:3081;
             proxy_http_version 1.1;
@@ -121,6 +127,10 @@ data:
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter_types text/html;
+            sub_filter '<head><base href="/">' '<head><base href="/"><script>window.__DSH_TRUSTED_LOOPBACK__=true;</script>';
             proxy_read_timeout 3600s;
         }
     }

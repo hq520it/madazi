@@ -43,6 +43,16 @@ spec:
       Host: "127.0.0.1"
       Origin: ""
 ---
+# LLM 网关前缀剥离（/llm/* → /*，对齐网关路由表挂根语义；浏览器 baseURL=/llm/v1 → gateway /v1/*）
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-llm
+  namespace: madazi
+spec:
+  stripPrefix:
+    prefixes: ["/llm"]
+---
 # ── IngressRoute ─────────────────────────────────────────────
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -104,6 +114,16 @@ spec:
         - { name: dsh-auth }
       services:
         - { name: madazi-dsh-web, port: 3080 }
+    # 3.6) LLM 网关（平台统一模型网关 /llm/v1，浏览器 madazi-platform provider baseURL）：
+    #      网关自鉴 Bearer mz-key，无需 forwardAuth；直连 madazi-llm-gateway（不经 server/dsh-web）；
+    #      strip /llm/v1 → /v1/*（网关路由表 /v1/chat、/user、/healthz 挂根）
+    - match: PathPrefix(`/llm/v1`)
+      kind: Rule
+      priority: 130
+      middlewares:
+        - { name: strip-llm }
+      services:
+        - { name: madazi-llm-gateway, port: 3459 }
     # 4) 其余 /api/*（dsh RPC HTTP 面）→ 登录门 → madazi-server（鉴权 + 会话数据层权限
     #    SESSION_RPC 拦截 + PLATFORM_API fall-through 反代 pod；新增 dsh RPC 仍零配置自动通）
     - match: PathPrefix(`/api`)

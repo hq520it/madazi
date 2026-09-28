@@ -84,7 +84,9 @@ function isAuthed(req) {
 // dsh web 特权 RPC（settings.*/credentials.*/agentPreset.*/host.pickDirectory/openPath/llm.discoverModels）
 // 官方硬编码 loopback-only（isTrustedApiRequest(request, [])），公网反代 Host=<YOUR-DOMAIN> 必 403。
 // 平台登录门（/api/* 默认全鉴权）已挡未认证调用，这里伪装 loopback + 删 Origin 等价放行。
-const PRIVILEGED_RPC = /^\/api\/(settings\.|credentials\.|agentPreset\.|host\.pickDirectory|host\.openPath|llm\.|pluginInventory)/;
+// ★ 2026-09-21 dsh 0.1.35 斜杠形态（/api/settings/describe）：PRIVILEGED_RPC 须同时匹配
+//   点号与斜杠两种路径（点号请求经 normalizeRpcPath 归一成斜杠后再伪装，两形态都防 403）。
+const PRIVILEGED_RPC = /^\/api\/(settings[./]|credentials[./]|agentPreset[./]|host[./]pickDirectory|host[./]openPath|llm[./]|pluginInventory)/;
 
 // ★ 会话数据层权限（2026-08-27）：dsh 共享单实例会话全局可见，网关拦截敏感会话 RPC——
 //   读消息（history）/发消息（prompt）/导出（export）/子代理（subagent.history）
@@ -238,6 +240,16 @@ async function handleSessionRPC(req, res, proxy, filterProxy) {
   proxy.web(req, res, { target: TARGET, changeOrigin: false });
 }
 
+// ★ 2026-09-21 dsh 0.1.35：服务端 HTTP RPC 路由改斜杠形态（/api/settings/describe、
+//   /api/llm/listProviders），但官方前端部分调用仍发点号（/api/settings.describe、
+//   /api/llm.listProviders、/api/llm.listConfigurableProviders）→ dsh-web 侧 404
+//   → 前端设置-模型 tab 报「settings are unavailable in this browser」。
+//   网关在此把 /api/<ns>.<method> 归一为 /api/<ns>/<method>（保留 query），两种形态都通；
+//   已斜杠的 /api/session/modelCatalog 等原样放行（不匹配点号正则）。
+function normalizeRpcPath(p) {
+  return typeof p === 'string' ? p.replace(/^(\/api\/[A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)(?=\/|\?|$)/, '$1/$2') : p;
+}
+
 // ★ 会话列表/搜索响应过滤：selfHandleResponse 手动写回（按 cwd 归属项目 ∩ 用户项目集合）
 function setupSessionFilterProxy() {
   const fp = httpProxy.createProxyServer({ selfHandleResponse: true });
@@ -256,6 +268,7 @@ function setupSessionFilterProxy() {
   fp.on('proxyReq', (proxyReq, req) => {
     let path = req.originalUrl || req.url;
     if (path.startsWith('/dsh-web')) path = path.slice('/dsh-web'.length) || '/';
+    path = normalizeRpcPath(path);
     proxyReq.path = path;
     if (req._dshRawBody && req._dshRawBody.length) {
       proxyReq.setHeader('Content-Length', req._dshRawBody.length);
@@ -362,16 +375,19 @@ export function setupDshWebProxy(app) {
     if (path.startsWith('/dsh-web')) {
       path = path.slice('/dsh-web'.length) || '/';
     }
+    path = normalizeRpcPath(path);
     proxyReq.path = path;
+    // ★ 特权 RPC 伪装 loopback：Host → 127.0.0.1 + 删 Origin（绕过 loopback-only 围栏）。
+    //   ⚠️ 必须在 write body 之前设置：setHeader 之后一旦 write/flush 就锁死，再 set 抛
+    //   ERR_HTTP_HEADERS_SENT（2026-09-21 踩坑：点号 RPC body 回写在前 → 直接崩进程）。
+    if (PRIVILEGED_RPC.test(path)) {
+      proxyReq.setHeader('Host', '127.0.0.1');
+      proxyReq.removeHeader('Origin');
+    }
     // ★ 会话 RPC 的 body 已被 handleSessionRPC 读取消费 → 这里回写（http-proxy 默认 pipe 已无数据）
     if (req._dshRawBody && req._dshRawBody.length) {
       proxyReq.setHeader('Content-Length', req._dshRawBody.length);
       proxyReq.write(req._dshRawBody);
-    }
-    // ★ 特权 RPC 伪装 loopback：Host → 127.0.0.1 + 删 Origin（绕过 loopback-only 围栏）
-    if (PRIVILEGED_RPC.test(path)) {
-      proxyReq.setHeader('Host', '127.0.0.1');
-      proxyReq.removeHeader('Origin');
     }
   });
 
@@ -407,6 +423,32 @@ export function setupDshWebProxy(app) {
       // ★ 会话数据层权限：拦截敏感会话 RPC（读/写/操作/列表 + 创建按归属校验）
       if (SESSION_RPC.test(p) || SESSION_LIST_RPC.test(p) || SESSION_CREATE_RPC.test(p)) {
         return handleSessionRPC(req, res, proxy, filterProxy);
+      }
+      // ★ 2026-09-21 点号 RPC body 归一：dsh 0.1.35 不仅校验 URL 路径（已由 proxyReq
+      //   normalizeRpcPath 归一为斜杠），还校验信封 body.payload.method 必须与端点
+      //   一致（斜杠）。前端部分调用发点号 method（settings.describe / llm.listProviders），
+      //   这里缓冲 body 并改写 method 为斜杠，与 URL 归一配套，否则 dsh 返回
+      //   gateway/bad-request「method ... does not match endpoint ...」。
+      const normalized = normalizeRpcPath(p);
+      if (normalized !== p) {
+        let bodyBuf = Buffer.alloc(0);
+        req.on('data', (c) => { bodyBuf = Buffer.concat([bodyBuf, c]); });
+        return req.on('end', () => {
+          try {
+            const json = JSON.parse(bodyBuf.toString('utf8') || '{}');
+            if (json && typeof json.method === 'string' && json.method.includes('.')) {
+              json.method = json.method.replace(/^([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/, '$1/$2');
+              const out = Buffer.from(JSON.stringify(json));
+              req._dshRawBody = out;
+              req.headers['content-length'] = String(out.length);
+            } else {
+              req._dshRawBody = bodyBuf;
+            }
+          } catch {
+            req._dshRawBody = bodyBuf;
+          }
+          proxy.web(req, res, { target: TARGET, changeOrigin: false });
+        });
       }
       return proxy.web(req, res, { target: TARGET, changeOrigin: false });
     }
