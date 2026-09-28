@@ -7,6 +7,12 @@
 FROM madazi-dsh:latest
 
 RUN npm i -g @deepseek-ai/dsh@0.1.5-rc.1 --registry=https://registry.npmmirror.com
+# ★ 保险丝：dsh@0.1.5-rc.1 声明依赖 dsh-sandbox-local（dsh-base 连坐），
+#   registry 偶发缺装会让 web profile 启动崩「plugin tree failed to load」——
+#   显式补装 + grep 双保险，缺包即构建失败。
+RUN npm i -g @deepseek-ai/dsh-sandbox-local@0.1.5-rc.1 --registry=https://registry.npmmirror.com \
+    && grep -q "@deepseek-ai/dsh-sandbox-local" /usr/local/lib/node_modules/@deepseek-ai/dsh/package.json \
+    || { echo "SANDBOX-LOCAL VERIFY FAILED: dsh 依赖声明异常"; exit 1; }
 
 # ── workbench 三栏模板（fork 定制：gitee hq.com/dsh-workbeanch，dev@a9b3bec）──
 # 配方 = 本地实证（三栏渲染验证通过）：profile package.json deps+bundles +
