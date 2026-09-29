@@ -68,6 +68,18 @@ bash scripts/standalone/start.sh
 - New user registration requires an invite code (generated in "Admin → Invite codes")
 - Stop: `Ctrl+C` (stops both processes together)
 
+### 4) Configure models (BYOK, self-service)
+
+The open-source build **ships with no model keys preinstalled** and requires **no admin-side "injection"** — users simply add their own keys in **Settings → Models** after login:
+
+- **Official direct (recommended)**: select a provider (e.g. DeepSeek official) in the Models tab, paste your own API key, and call the official API directly — no config changes needed.
+- **Via the platform gateway (optional)**: to route through the platform gateway for usage metering / centralized key management, fill in "Add custom provider":
+  - `baseURL`: `http(s)://<your-domain>/llm/v1`
+  - `API Key`: a platform key (generate or fill in "Admin → User keys")
+  - Model: `deepseek-v4-flash` or any model already configured on the platform
+
+Both paths are standard self-service configuration, natively supported by the open-source code — no extra scripts or injection. Model keys live only in each user's own dsh config (`DSH_HOME`); the platform neither holds nor manages them.
+
 ### Environment variables (optional)
 
 | Variable | Default | Description |
