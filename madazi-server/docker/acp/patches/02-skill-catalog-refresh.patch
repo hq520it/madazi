@@ -1,21 +1,18 @@
 # Patch 02 — 技能目录「唤起即刷新」
 #
-# 目标：官方 ui-skill（@deepseek-ai/dsh-client-ui-skill）的 fetchCatalog 按 session
-#       缓存（fetches Map），新技能写入后，已存在会话的 / 菜单仍是旧目录。
-# 方式：candidates 时先 invalidate(session.sessionId) 丢弃缓存再拉取。
-#
+# 目标：官方按 session 缓存技能目录，新技能写入后已存在会话的 / 菜单仍是旧列表。
+#       在 candidates 前 invalidate(session.sessionId) 再 fetchCatalog。
 # 应用（fork 后，源码级）：dsh-src 仓内
 #   cd dsh-src && git apply --check patches/02-skill-catalog-refresh.patch && git apply patches/02-skill-catalog-refresh.patch
-#   已随 commit a8b829d760 「madazi: 内核三处定制」进入 fork 主仓，升级重放此 patch。
+#   定制随 fork 历史提交进入主仓，升级重放此 patch。
 # 重验（升级 runbook）：git apply --check 通过即命中；
-#       grep "invalidate(session.sessionId)" packages/client/ui-skill/src/client/index.ts
+#       grep "invalidate(session.sessionId)" packages/client/ui-skill/lib/client.js
 
 diff --git a/packages/client/ui-skill/src/client/index.ts b/packages/client/ui-skill/src/client/index.ts
-index a17c1c0ce2..b3bfd1404b 100644
+index 2b6cd12ea2..b815e40f68 100644
 --- a/packages/client/ui-skill/src/client/index.ts
 +++ b/packages/client/ui-skill/src/client/index.ts
-@@ -139,8 +139,12 @@ export function apply(ctx: ClientContext): void {
-     trigger: '/',
+@@ -161,6 +161,10 @@ export function apply(ctx: ClientContext): void {
      name: 'skill',
      order: 2,
      async candidates(session, { query, signal }) {
@@ -23,7 +20,6 @@ index a17c1c0ce2..b3bfd1404b 100644
 +      // session, so newly written skills stay invisible to existing sessions'
 +      // `/` menus; invalidate the session cache before every catalog fetch.
 +      invalidate(session.sessionId)
-       const skills = await fetchCatalog(session.sessionId)
+       if (sessions.subagentAddress(session.sessionId) !== undefined) return []
+       const skills = await fetchCatalog(session.sessionId).promise
        // Superseded keystroke: the shared fetch stays warm, this caller yields.
-       if (signal.aborted) return []
-       // The same ranking as the command group of this menu: case-insensitive

@@ -187,11 +187,14 @@
 		let _myUid = "";
 		const _loadMyUid = () => {
 			if (_myUid) return;
+			// ★ 登录态熔断：未登录（login 插件置 false）不再 30s 重复拉 auth/me 刷屏；
+			//   登录后 login 插件会整页 reload → 本模块重跑 _loadMyUid，重试自然恢复。
+			if (window.__madaziLoggedIn === false) return;
 			fetch("/api/auth/me", { credentials: "same-origin" }).then((r) => r.json()).then((j) => {
 				const u = j && j.user;
 				if (u && u.id) _myUid = String(u.id);
-				else setTimeout(_loadMyUid, 30000);
-			}).catch(() => { setTimeout(_loadMyUid, 30000); });
+				else if (window.__madaziLoggedIn !== false) setTimeout(_loadMyUid, 30000);
+			}).catch(() => { if (window.__madaziLoggedIn !== false) setTimeout(_loadMyUid, 30000); });
 		};
 		_loadMyUid();
 

@@ -19,7 +19,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/getProject",
@@ -31,12 +31,12 @@
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Project",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listTasks",
@@ -48,12 +48,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/cancelTask",
@@ -65,17 +65,17 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}, {
 					name: "taskId",
 					wire: "taskId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#CancelResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewStatus",
@@ -87,12 +87,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewStatus",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewStart",
@@ -104,12 +104,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewStartResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewStop",
@@ -121,12 +121,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewStopResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewRestart",
@@ -138,12 +138,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewRestartResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewHardRestart",
@@ -155,12 +155,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewRestartResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listRunningPreviews",
@@ -172,7 +172,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#RunningPreviews",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewLogs",
@@ -184,12 +184,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewLogsResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listTemplates",
@@ -201,7 +201,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#TemplateList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/createProject",
@@ -213,12 +213,12 @@
 					name: "payload",
 					wire: "payload",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateProjectPayload", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateProjectPayload", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Project",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/getMe",
@@ -230,7 +230,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Me",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/resolveWorkspace",
@@ -242,12 +242,12 @@
 					name: "workspaceId",
 					wire: "workspaceId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#WorkspaceId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#WorkspaceId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#WorkspaceInfo",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listKeys",
@@ -259,7 +259,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/createKey",
@@ -271,12 +271,12 @@
 					name: "payload",
 					wire: "payload",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateKeyPayload", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateKeyPayload", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Key",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/revokeKey",
@@ -288,12 +288,12 @@
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#RevokeResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/usageSummary",
@@ -305,7 +305,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#UsageSummary",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listUsers",
@@ -317,7 +317,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#UserList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/createUser",
@@ -329,12 +329,12 @@
 					name: "payload",
 					wire: "payload",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateUserPayload", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateUserPayload", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#User",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/deleteUser",
@@ -346,12 +346,12 @@
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#DeleteResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/updateUserRole",
@@ -363,17 +363,17 @@
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}, {
 					name: "role",
 					wire: "role",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Role", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Role", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#User",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listAllKeys",
@@ -385,7 +385,7 @@
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/getProjectOnlineUsers",
@@ -397,12 +397,12 @@
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#OnlineUsers",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}]
 				};

@@ -150,7 +150,7 @@ madazi 在共享单进程的智能体宿主上实现了租户级隔离：
 | 组件 | 来源 | 许可证 |
 |---|---|---|
 | 平台本体（madazi-server / 插件 / 启动器 / 部署） | 本项目 | Apache-2.0 |
-| [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness) 官方内核 | 官方开源工程，`dsh-src/` fork 自其 `dsh-v0.1.5-rc.1` 标签并含 madazi 内核定制 | MIT |
+| [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness) 官方内核 | 官方开源工程，`dsh-src/` fork 自其 `dsh-v0.2.0-rc.1` 标签并含 madazi 内核定制 | MIT |
 | [deepseek-harness-workbench-plugin](https://github.com/loadingvx/deepseek-harness-workbench-plugin)（`wb-src/` fork 来源） | 第三方开源工程 | MIT |
 
 上游项目的版权与许可声明保留在其各自目录内。

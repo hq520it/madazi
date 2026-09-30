@@ -339,7 +339,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/getProject",
@@ -351,12 +351,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Project",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listTasks",
@@ -368,12 +368,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/cancelTask",
@@ -385,17 +385,17 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}, {
 					name: "taskId",
 					wire: "taskId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#CancelResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewStatus",
@@ -407,12 +407,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewStatus",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewStart",
@@ -424,12 +424,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewStartResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewStop",
@@ -441,12 +441,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewStopResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewRestart",
@@ -458,12 +458,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewRestartResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewHardRestart",
@@ -475,12 +475,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewRestartResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listRunningPreviews",
@@ -492,7 +492,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#RunningPreviews",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/previewLogs",
@@ -504,12 +504,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#PreviewLogsResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 			}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listTemplates",
@@ -521,7 +521,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#TemplateList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/createProject",
@@ -533,12 +533,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "payload",
 					wire: "payload",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateProjectPayload", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateProjectPayload", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Project",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/getMe",
@@ -550,7 +550,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Me",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/resolveWorkspace",
@@ -562,12 +562,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "workspaceId",
 					wire: "workspaceId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#WorkspaceId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#WorkspaceId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#WorkspaceInfo",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listKeys",
@@ -579,7 +579,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/createKey",
@@ -591,12 +591,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "payload",
 					wire: "payload",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateKeyPayload", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateKeyPayload", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#Key",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/revokeKey",
@@ -608,12 +608,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#RevokeResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/usageSummary",
@@ -625,7 +625,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#UsageSummary",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listUsers",
@@ -637,7 +637,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#UserList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/createUser",
@@ -649,12 +649,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "payload",
 					wire: "payload",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateUserPayload", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateUserPayload", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#User",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/deleteUser",
@@ -666,12 +666,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#DeleteResult",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/updateUserRole",
@@ -683,17 +683,17 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "id",
 					wire: "id",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}, {
 					name: "role",
 					wire: "role",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Role", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Role", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#User",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/listAllKeys",
@@ -705,7 +705,7 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyList",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}, {
 				id: "@madazi/dsh-plugin-madazi#madazi/getProjectOnlineUsers",
@@ -717,12 +717,12 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 					name: "projectId",
 					wire: "projectId",
 					source: "json",
-					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v } }
+					codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: { parse: (v) => v }, create: () => ({ parse: (v) => v }) }
 				}],
 				result: {
 					mode: "strict",
 					typeSymbol: "@madazi/dsh-plugin-madazi/client#OnlineUsers",
-					schema: { parse: (v) => v }
+					schema: { parse: (v) => v }, create: () => ({ parse: (v) => v })
 				}
 				}]
 				};
@@ -2368,22 +2368,6 @@ if (typeof document !== "undefined" && document.querySelector("style[data-plugin
 				return j;
 			} catch (e) { return { error: String((e && e.message) || e) }; }
 		};
-		// ★ 项目元数据拉取节流（2026-09-18）：MutationObserver 驱动的行增强（injectMeta）在 dsh 官方
-		//   树行重建时会反复触发，此前每行每次无缓存拉「全量/projects + members + me」→ 高频轮询风暴
-		//   （实测 45s 3011 次 ≈ 67 req/s；304 虽无 body，server 仍全量查库）。这里做短 TTL 缓存 +
-		//   同 key 并发去重；WS 事件（member_added/project_created）后 clear 失效，不牺牲实时性。
-		const _projectsMetaCache = new Map(); // key -> { at, promise }（与 12-meta-reporting._metaCache 命名区分）
-		const projectMetaCacheGet = (key, ttlMs, fn) => {
-			const hit = _projectsMetaCache.get(key);
-			if (hit && Date.now() - hit.at < ttlMs) return hit.promise;
-			const p = Promise.resolve(fn()).catch((e) => ({ error: String((e && e.message) || e) }));
-			_projectsMetaCache.set(key, { at: Date.now(), promise: p });
-			return p;
-		};
-		window.__madaziClearMetaCache = () => _projectsMetaCache.clear();
-		const cachedProjects = () => projectMetaCacheGet("listProjects", 8000, () => madaziFetch("/projects"));
-		const cachedMembers = (pid) => projectMetaCacheGet("members:" + pid, 20000, () => madaziFetch("/projects/" + pid + "/members"));
-		const cachedMe = () => projectMetaCacheGet("auth-me", 20000, () => madaziFetch("/auth/me"));
 		// ★ 工作区真实路径解析（2026-09-12 去硬编码化）：server 按部署形态唯一推导
 		//   （k8s=/app/generated/...；单机版=注入的 PROJECTS_ROOT/...），经 B12 安全专用接口
 		//   GET /api/projects/:id/workspace-path（挂 projectAccess）下发，前端不再拼 /app/generated
@@ -2501,7 +2485,6 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 						}
 						// ★ 协同实时：被加进项目 → 自动创建 workspace + 通知项目列表刷新
 						if (m && m.type === "member_added") {
-							window.__madaziClearMetaCache && window.__madaziClearMetaCache();
 							_autoAdoptProject(m);
 							// 清未分组会话过滤标记并重扫（被加进项目后历史会话恢复显示）
 							try { window.__madaziUngroupedRescan && window.__madaziUngroupedRescan(); } catch { /* ignore */ }
@@ -2510,7 +2493,6 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 						// ★ 协同实时：新项目 → 刷新项目列表 + membership 成员表（管理员/成员即时看到，
 						//   gate 立即放行新项目，无需等 30s 轮询）
 						if (m && m.type === "project_created") {
-							window.__madaziClearMetaCache && window.__madaziClearMetaCache();
 							try { if (window.__madaziMembershipRefresh) window.__madaziMembershipRefresh(); } catch { /* ignore */ }
 							for (const cb of window.__madaziProjectRefresh) { try { cb(m); } catch { /* ignore */ } }
 						}
@@ -2574,14 +2556,7 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 				}
 			};
 			scan();
-			// ★ 去抖（2026-09-18）：MutationObserver 高频触发（官方树行重建/排序）→ 合并为下一次宏任务
-			//   执行一次扫描；配合 injectMeta 元数据缓存，彻底消除逐行重复请求。
-			let _rowMetaTimer = null;
-			const scheduleScan = () => {
-				if (_rowMetaTimer) return;
-				_rowMetaTimer = setTimeout(() => { _rowMetaTimer = null; scan(); }, 60);
-			};
-			const mo = new MutationObserver(() => scheduleScan());
+			const mo = new MutationObserver(() => scan());
 			mo.observe(document.body, { childList: true, subtree: true, characterData: true });
 		};
 
@@ -2609,9 +2584,14 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 			sub.innerHTML = '<span class="madazi-ws-loading">…</span>';
 			sub.addEventListener("click", (e) => e.stopPropagation());
 			row.appendChild(sub);
-			const fail = () => { sub.remove(); if (row.dataset) row.dataset.madaziMetaDone = ""; };
-			// ★ 复用元数据缓存（src/10-fetch-online.js）：高频重扫只发一次批量请求，避免轮询风暴
-			cachedProjects().then((list) => {
+			const fail = () => {
+				sub.remove();
+				// ★ 失败/无归属：标记 done 防无限重扫循环（每轮 append subrow → fetch /projects →
+				//   失败 → 清标记 → MutationObserver 再触发 → 卡 loading + 高频 /api/projects）。
+				//   行仍保留（不隐藏），仅记录已处理标签，后续改名/新增项目由 observer 新树重扫。
+				if (row.dataset) { row.dataset.madaziMetaDone = "1"; row.dataset.madaziMetaLabel = label; }
+			};
+			madaziFetch("/projects").then((list) => {
 				const projects = Array.isArray(list) ? list : [];
 				// ★ 项目归属按 workspace 路径解析，绝不因「标题≠项目名」误藏分组行：
 				//   侧栏「项目重命名」只改 dsh 工作区标题（workspace.title），项目名
@@ -2636,7 +2616,7 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 				row.dataset.madaziMember = "1"; // ★ 成员项目
 				setSectionHidden(false); // ★ 成员项目：恢复该组会话行显示
 				row.dataset.madaziProjectId = p.id;
-				return Promise.all([cachedMembers(p.id), cachedMe()]).then(([mv, mev]) => {
+				return Promise.all([madaziFetch("/projects/" + p.id + "/members"), madaziFetch("/auth/me")]).then(([mv, mev]) => {
 					if (!mv || !mv.owner) { fail(); return null; }
 					sub.innerHTML = "";
 					const owner = mv.owner;
@@ -5566,11 +5546,14 @@ window.__madaziWatchEmptiness = _watchWorkspaceEmptiness;
 		let _myUid = "";
 		const _loadMyUid = () => {
 			if (_myUid) return;
+			// ★ 登录态熔断：未登录（login 插件置 false）不再 30s 重复拉 auth/me 刷屏；
+			//   登录后 login 插件会整页 reload → 本模块重跑 _loadMyUid，重试自然恢复。
+			if (window.__madaziLoggedIn === false) return;
 			fetch("/api/auth/me", { credentials: "same-origin" }).then((r) => r.json()).then((j) => {
 				const u = j && j.user;
 				if (u && u.id) _myUid = String(u.id);
-				else setTimeout(_loadMyUid, 30000);
-			}).catch(() => { setTimeout(_loadMyUid, 30000); });
+				else if (window.__madaziLoggedIn !== false) setTimeout(_loadMyUid, 30000);
+			}).catch(() => { if (window.__madaziLoggedIn !== false) setTimeout(_loadMyUid, 30000); });
 		};
 		_loadMyUid();
 

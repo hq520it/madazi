@@ -5,19 +5,17 @@
 #       dsh 内层 cookie 是冗余墙 → 直通。保留 isTrustedApiRequest 前位守卫
 #       （不可信 host 仍 403）。
 # 方式：移除两处 cookie 检查（API 鉴权与 index 鉴权）。
-#
 # 应用（fork 后，源码级）：dsh-src 仓内
 #   cd dsh-src && git apply --check patches/03-trusted-host-bypass.patch && git apply patches/03-trusted-host-bypass.patch
-#   已随 commit a8b829d760 「madazi: 内核三处定制」进入 fork 主仓，升级重放此 patch。
+#   已随 fork 历史提交进入主仓，升级重放此 patch。
 # 重验（升级 runbook）：git apply --check 通过即命中；
 #       grep "madazi trusted-host bypass" packages/client/connection/src/rpc-host.ts（期望 2 处）
 
 diff --git a/packages/client/connection/src/rpc-host.ts b/packages/client/connection/src/rpc-host.ts
-index d74734e132..9645c8df1d 100644
+index 0f98bc1f19..3ccbdb0b53 100644
 --- a/packages/client/connection/src/rpc-host.ts
 +++ b/packages/client/connection/src/rpc-host.ts
-@@ -95,14 +95,19 @@ export class HostConnectionService extends Service implements HostConnectionHand
- 
+@@ -103,7 +103,10 @@ export class HostConnectionService extends Service implements HostConnectionHand
    /** Apply the configured Host/Origin fence, then browser authentication. */
    requestRejection(request: ConnectionTrustRequest): ConnectionRequestRejection {
      if (!isTrustedApiRequest(request, this.trustedHosts)) return 403
@@ -28,13 +26,18 @@ index d74734e132..9645c8df1d 100644
 +    return undefined
    }
  
+   /** A request that passes the fence and authentication speaks for the operator. */
+@@ -113,8 +116,11 @@ export class HostConnectionService extends Service implements HostConnectionHand
+   }
+ 
    /** Authenticate an index request through the process-token exchange or cookie. */
-   authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean {
+-  authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean {
 -    return this.browserAuth.authorizeIndex(request, response)
++  authorizeIndex(_request: ConnectionIndexRequest, _response: ConnectionIndexResponse): boolean {
 +    // madazi trusted-host bypass (patch 03): serve the index unconditionally;
-+    // access control happens at the platform login gate.
++    // access control happens at the platform login gate. Params unused; the edge
++    // forwardAuth login gate owns access control.
 +    return true
    }
  
    /** Add this process's launch token to the clean application URL. */
-   authenticatedUrl(baseUrl: string): string {

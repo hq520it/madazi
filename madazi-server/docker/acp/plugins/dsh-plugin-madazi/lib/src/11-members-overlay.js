@@ -19,9 +19,14 @@
 			sub.innerHTML = '<span class="madazi-ws-loading">…</span>';
 			sub.addEventListener("click", (e) => e.stopPropagation());
 			row.appendChild(sub);
-			const fail = () => { sub.remove(); if (row.dataset) row.dataset.madaziMetaDone = ""; };
-			// ★ 复用元数据缓存（src/10-fetch-online.js）：高频重扫只发一次批量请求，避免轮询风暴
-			cachedProjects().then((list) => {
+			const fail = () => {
+				sub.remove();
+				// ★ 失败/无归属：标记 done 防无限重扫循环（每轮 append subrow → fetch /projects →
+				//   失败 → 清标记 → MutationObserver 再触发 → 卡 loading + 高频 /api/projects）。
+				//   行仍保留（不隐藏），仅记录已处理标签，后续改名/新增项目由 observer 新树重扫。
+				if (row.dataset) { row.dataset.madaziMetaDone = "1"; row.dataset.madaziMetaLabel = label; }
+			};
+			madaziFetch("/projects").then((list) => {
 				const projects = Array.isArray(list) ? list : [];
 				// ★ 项目归属按 workspace 路径解析，绝不因「标题≠项目名」误藏分组行：
 				//   侧栏「项目重命名」只改 dsh 工作区标题（workspace.title），项目名
@@ -46,7 +51,7 @@
 				row.dataset.madaziMember = "1"; // ★ 成员项目
 				setSectionHidden(false); // ★ 成员项目：恢复该组会话行显示
 				row.dataset.madaziProjectId = p.id;
-				return Promise.all([cachedMembers(p.id), cachedMe()]).then(([mv, mev]) => {
+				return Promise.all([madaziFetch("/projects/" + p.id + "/members"), madaziFetch("/auth/me")]).then(([mv, mev]) => {
 					if (!mv || !mv.owner) { fail(); return null; }
 					sub.innerHTML = "";
 					const owner = mv.owner;

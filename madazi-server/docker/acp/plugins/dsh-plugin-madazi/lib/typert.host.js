@@ -2,6 +2,10 @@
  * Registered into ctx.typert by dsh-typert-loader when the plugin entry mounts
  * (package.json exports["./typert"]), which makes the gateway serve
  * madazi.* endpoints and lets the client resolve ctx.remote.madazi.
+ *
+ * 0.2.0-rc.1 upgrade: typert-loader requireStrictCodec now demands a `create()`
+ * factory on every strict codec/result object (v2 style, replaces the v1
+ * `schema` field for materialization). `schema` is kept for older consumers.
  */
 import { z } from "zod";
 
@@ -10,6 +14,14 @@ const listResultSchema = z.array(z.any()).default([]);
 const anyResultSchema = z.any();
 
 const ID = "@madazi/dsh-plugin-madazi#madazi/";
+
+/** Build a strict codec/result object; create() lazily vends the zod schema. */
+const strict = (typeSymbol, schema) => ({
+	mode: "strict",
+	typeSymbol,
+	schema,
+	create: () => schema,
+});
 
 export const TYPERT = {
 	package: "@madazi/dsh-plugin-madazi",
@@ -23,11 +35,7 @@ export const TYPERT = {
 			method: "listProjects",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: {
-				mode: "strict",
-				typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectList",
-				schema: listProjectsResultSchema
-			}
+			result: strict("@madazi/dsh-plugin-madazi/client#ProjectList", listProjectsResultSchema)
 		},
 		{
 			id: ID + "getProject",
@@ -39,13 +47,9 @@ export const TYPERT = {
 				name: "id",
 				wire: "id",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}],
-			result: {
-				mode: "strict",
-				typeSymbol: "@madazi/dsh-plugin-madazi/client#Project",
-				schema: anyResultSchema
-			}
+			result: strict("@madazi/dsh-plugin-madazi/client#Project", anyResultSchema)
 		},
 		{
 			id: ID + "listTasks",
@@ -57,13 +61,9 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}],
-			result: {
-				mode: "strict",
-				typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskList",
-				schema: listResultSchema
-			}
+			result: strict("@madazi/dsh-plugin-madazi/client#TaskList", listResultSchema)
 		},
 		{
 			id: ID + "cancelTask",
@@ -75,18 +75,14 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}, {
 				name: "taskId",
 				wire: "taskId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#TaskId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#TaskId", z.any())
 			}],
-			result: {
-				mode: "strict",
-				typeSymbol: "@madazi/dsh-plugin-madazi/client#CancelResult",
-				schema: anyResultSchema
-			}
+			result: strict("@madazi/dsh-plugin-madazi/client#CancelResult", anyResultSchema)
 		},
 		{
 			id: ID + "listTemplates",
@@ -95,7 +91,7 @@ export const TYPERT = {
 			method: "listTemplates",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#TemplateList", schema: listResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#TemplateList", listResultSchema)
 		},
 		{
 			id: ID + "createProject",
@@ -107,9 +103,9 @@ export const TYPERT = {
 				name: "payload",
 				wire: "payload",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateProjectPayload", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#CreateProjectPayload", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Project", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#Project", anyResultSchema)
 		},
 		{
 			id: ID + "getMe",
@@ -118,7 +114,7 @@ export const TYPERT = {
 			method: "getMe",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Me", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#Me", anyResultSchema)
 		},
 		{
 			id: ID + "listKeys",
@@ -127,7 +123,7 @@ export const TYPERT = {
 			method: "listKeys",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyList", schema: listResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#KeyList", listResultSchema)
 		},
 		{
 			id: ID + "createKey",
@@ -139,9 +135,9 @@ export const TYPERT = {
 				name: "payload",
 				wire: "payload",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateKeyPayload", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#CreateKeyPayload", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Key", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#Key", anyResultSchema)
 		},
 		{
 			id: ID + "revokeKey",
@@ -153,9 +149,9 @@ export const TYPERT = {
 				name: "id",
 				wire: "id",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#KeyId", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#RevokeResult", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#RevokeResult", anyResultSchema)
 		},
 		{
 			id: ID + "usageSummary",
@@ -164,7 +160,7 @@ export const TYPERT = {
 			method: "usageSummary",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UsageSummary", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#UsageSummary", anyResultSchema)
 		},
 		{
 			id: ID + "listUsers",
@@ -173,7 +169,7 @@ export const TYPERT = {
 			method: "listUsers",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserList", schema: listResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#UserList", listResultSchema)
 		},
 		{
 			id: ID + "createUser",
@@ -185,9 +181,9 @@ export const TYPERT = {
 				name: "payload",
 				wire: "payload",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#CreateUserPayload", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#CreateUserPayload", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#User", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#User", anyResultSchema)
 		},
 		{
 			id: ID + "deleteUser",
@@ -199,9 +195,9 @@ export const TYPERT = {
 				name: "id",
 				wire: "id",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#UserId", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#DeleteResult", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#DeleteResult", anyResultSchema)
 		},
 		{
 			id: ID + "updateUserRole",
@@ -213,14 +209,14 @@ export const TYPERT = {
 				name: "id",
 				wire: "id",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#UserId", z.any())
 			}, {
 				name: "role",
 				wire: "role",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Role", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#Role", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#User", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#User", anyResultSchema)
 		},
 		{
 			id: ID + "listAllKeys",
@@ -229,7 +225,7 @@ export const TYPERT = {
 			method: "listAllKeys",
 			invocation: { kind: "direct" },
 			parameters: [],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#KeyList", schema: listResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#KeyList", listResultSchema)
 		},
 		{
 			id: ID + "listProjectMembers",
@@ -241,9 +237,9 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#MemberList", schema: listResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#MemberList", listResultSchema)
 		},
 		{
 			id: ID + "searchProjectMembers",
@@ -255,14 +251,14 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}, {
 				name: "q",
 				wire: "q",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#SearchQ", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#SearchQ", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserList", schema: listResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#UserList", listResultSchema)
 		},
 		{
 			id: ID + "addProjectMember",
@@ -274,14 +270,14 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}, {
 				name: "payload",
 				wire: "payload",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#AddMemberPayload", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#AddMemberPayload", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Member", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#Member", anyResultSchema)
 		},
 		{
 			id: ID + "removeProjectMember",
@@ -293,14 +289,14 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}, {
 				name: "userId",
 				wire: "userId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#UserId", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#DeleteResult", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#DeleteResult", anyResultSchema)
 		},
 		{
 			id: ID + "setProjectMemberRole",
@@ -312,19 +308,19 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}, {
 				name: "userId",
 				wire: "userId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#UserId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#UserId", z.any())
 			}, {
 				name: "role",
 				wire: "role",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Role", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#Role", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#Member", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#Member", anyResultSchema)
 		},
 		{
 			id: ID + "getProjectOnlineUsers",
@@ -336,9 +332,9 @@ export const TYPERT = {
 				name: "projectId",
 				wire: "projectId",
 				source: "json",
-				codec: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#ProjectId", schema: z.any() }
+				codec: strict("@madazi/dsh-plugin-madazi/client#ProjectId", z.any())
 			}],
-			result: { mode: "strict", typeSymbol: "@madazi/dsh-plugin-madazi/client#OnlineUsers", schema: anyResultSchema }
+			result: strict("@madazi/dsh-plugin-madazi/client#OnlineUsers", anyResultSchema)
 		}
 	],
 	model: { services: [], events: [], objects: [] }

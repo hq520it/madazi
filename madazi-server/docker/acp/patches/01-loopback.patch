@@ -1,22 +1,21 @@
-# Patch 01 — 授权围栏放宽（loopback，settings → 模型 tab 可用）
+# Patch 01 — loopback 围栏放宽（模型设置 tab）
 #
-# 目标：dsh 公网域名访问下 isLoopback 判定只认 localhost/127.x，
-#       settings mirror 走 memory 模式 → 模型设置 tab 不可用。
-# 方式：isLoopback 出口额外认可 __DSH_TRUSTED_LOOPBACK__（登录门内注入的页面全局）。
-#
+# 目标：官方 isLoopback 只认 localhost/127.x；平台公网域名部署时 settings
+#       mirror 走 memory 模式，模型设置 tab 不可用。托管页载入
+#       __DSH_TRUSTED_LOOPBACK__ 全局后，isLoopback 认可该标记
+#       （前端静态页注入在 frontend-static renderIndex）。
 # 应用（fork 后，源码级）：dsh-src 仓内
 #   cd dsh-src && git apply --check patches/01-loopback.patch && git apply patches/01-loopback.patch
-#   已随 commit a8b829d760 「madazi: 内核三处定制」进入 fork 主仓，升级重放此 patch。
-# 重验（升级 runbook）：git apply --check 通过即命中；grep "__DSH_TRUSTED_LOOPBACK__"
-#       应命中两处：packages/client/connection/src/client/index.ts（判定）
-#       + packages/host/frontend-static/src/index.ts（renderIndex 注入）。
+#   定制随 fork 历史提交进入主仓，升级重放此 patch。
+# 重验（升级 runbook）：git apply --check 通过即命中；
+#       grep "__DSH_TRUSTED_LOOPBACK__" packages/client/connection/lib/client.js（代码标记保留）
+#       与 packages/host/frontend-static/lib/index.js（index 注入）
 
 diff --git a/packages/client/connection/src/client/index.ts b/packages/client/connection/src/client/index.ts
-index 24deda96af..5d71b1db5f 100644
+index e9d80a64f4..b09cd1e8f7 100644
 --- a/packages/client/connection/src/client/index.ts
 +++ b/packages/client/connection/src/client/index.ts
-@@ -223,9 +223,9 @@ export function apply(ctx: Context): void {
-     publishGeneration(undefined)
+@@ -245,7 +245,7 @@ export function installConnection(ctx: Context, options: ConnectionInstallOption
      publishState(undefined)
    }
    const handle: ConnectionHandle = {
@@ -25,25 +24,22 @@ index 24deda96af..5d71b1db5f 100644
      generation: {
        getSnapshot: () => generation,
        subscribe: (listener) => {
-         generationListeners.add(listener)
 diff --git a/packages/host/frontend-static/src/index.ts b/packages/host/frontend-static/src/index.ts
-index 3d218f31e6..e440184f11 100644
+index e497efd228..47f3e2bcb2 100644
 --- a/packages/host/frontend-static/src/index.ts
 +++ b/packages/host/frontend-static/src/index.ts
-@@ -118,9 +118,15 @@ export function apply(ctx: Context, config: Config): void {
-   // relative asset URLs would resolve under the request directory, so the
-   // served form anchors them at the site root ahead of every URL-bearing tag.
+@@ -116,7 +116,13 @@ export function apply(ctx: Context, config: Config): void {
+   // Insert after all index transforms so the base precedes every resource reference.
    const renderIndex = async (): Promise<string> => {
      const body = ctx.webServer.renderIndex(await readFile(distIndex, 'utf8'))
--    return body.replace(/<head(?:\s[^>]*)?>/i, open => `${open}<base href="/">`)
+-    return body.replace(/<head(?:\s[^>]*)?>/i, open => `${open}<base href="./">`)
++    // madazi loopback fence relax (patch 01): served pages carry the trusted
++    // loopback flag because the public deployment sits behind the platform
++    // login gate; `isLoopback` then reports the privileged surface reachable
++    // regardless of the page authority (unlocks the settings mirror / model tab
++    // over the public domain).
 +    return body.replace(/<head(?:\s[^>]*)?>/i, open =>
-+      // madazi loopback fence relax (patch 01): served pages carry the trusted
-+      // loopback flag because the public deployment sits behind the platform
-+      // login gate; `isLoopback` then reports the privileged surface reachable
-+      // regardless of the page authority (unlocks the settings mirror / model tab
-+      // over the public domain).
 +      `${open}<base href="/"><script>window.__DSH_TRUSTED_LOOPBACK__=true;</script>`)
    }
    ctx.effect(() => ctx.webServer.registerFallback(async (req, res) => {
      // Non-GET/HEAD without a matching named route is 405 (fallback-only
-     // semantics: named routes own their method handling).

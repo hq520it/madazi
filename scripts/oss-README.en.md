@@ -150,7 +150,7 @@ Component provenance:
 | Component | Origin | License |
 |---|---|---|
 | Platform itself (madazi-server / plugins / launcher / deploy) | This project | Apache-2.0 |
-| [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) official kernel | Official open-source project; `dsh-src/` forked from its `dsh-v0.1.5-rc.1` tag with madazi kernel customizations | MIT |
+| [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) official kernel | Official open-source project; `dsh-src/` forked from its `dsh-v0.2.0-rc.1` tag with madazi kernel customizations | MIT |
 | [deepseek-harness-workbench-plugin](https://github.com/loadingvx/deepseek-harness-workbench-plugin) (`wb-src/` fork source) | Third-party open-source project | MIT |
 
 Copyright and license notices of upstream projects are preserved in their respective directories.
